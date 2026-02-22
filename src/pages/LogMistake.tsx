@@ -26,23 +26,45 @@ export default function LogMistake() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !subject || !chapter || !mistakeType || !difficulty) return;
+    console.log('handleSave called — attempting to insert mistake...');
 
     setSaving(true);
-    const { error } = await supabase.from('mistakes').insert({
-      user_id: user.id,
-      subject,
-      chapter,
-      mistake_type: mistakeType,
-      difficulty,
-      notes: notes || null,
-    });
-    setSaving(false);
-    if (error) {
-      console.error('Failed to insert mistake:', error);
-      return;
+    try {
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError || !authData?.user) {
+        console.error('Auth error:', authError);
+        alert('Could not retrieve user. Please log in again.');
+        setSaving(false);
+        return;
+      }
+
+      const payload = {
+        user_id: authData.user.id,
+        subject,
+        chapter,
+        mistake_type: mistakeType,
+        difficulty,
+        notes: notes || null,
+      };
+      console.log('Inserting mistake with payload:', payload);
+
+      const { error } = await supabase.from('mistakes').insert([payload]);
+
+      setSaving(false);
+
+      if (error) {
+        console.error('Insert error:', error);
+        alert(`Failed to save mistake: ${error.message}`);
+        return;
+      }
+
+      console.log('Mistake inserted successfully!');
+      setSaved(true);
+    } catch (err: any) {
+      console.error('Unexpected error:', err);
+      alert(`Unexpected error: ${err.message}`);
+      setSaving(false);
     }
-    setSaved(true);
   };
 
   const resetForm = () => {
