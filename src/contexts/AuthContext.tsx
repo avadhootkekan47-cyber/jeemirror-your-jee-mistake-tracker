@@ -30,27 +30,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
-    if (data) {
-      // Check trial expiry
-      const trialStart = new Date(data.trial_start_date);
-      const now = new Date();
-      const daysSince = Math.floor((now.getTime() - trialStart.getTime()) / (1000 * 60 * 60 * 24));
-
-      if (data.plan === 'trial' && daysSince > 7) {
-        await supabase
-          .from('profiles')
-          .update({ plan: 'expired' })
-          .eq('id', userId);
-        data.plan = 'expired';
+      if (error) {
+        console.error('Profile fetch error:', error);
+        return;
       }
 
-      setProfile(data as Profile);
+      if (data) {
+        const trialStart = new Date(data.trial_start_date);
+        const now = new Date();
+        const daysSince = Math.floor((now.getTime() - trialStart.getTime()) / (1000 * 60 * 60 * 24));
+
+        if (data.plan === 'trial' && daysSince > 7) {
+          await supabase
+            .from('profiles')
+            .update({ plan: 'expired' })
+            .eq('id', userId);
+          data.plan = 'expired';
+        }
+
+        setProfile(data as Profile);
+      }
+    } catch (err) {
+      console.error('Unexpected profile fetch error:', err);
     }
   };
 

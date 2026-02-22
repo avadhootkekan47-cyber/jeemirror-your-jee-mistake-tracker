@@ -14,16 +14,23 @@ export default function Login() {
     setError('');
     setLoading(true);
 
-    const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+    try {
+      const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
 
-    if (loginError) {
-      setError(loginError.message);
+      if (loginError) {
+        setError(loginError.message);
+        setLoading(false);
+        return;
+      }
+
+      console.log('Login successful, navigating to dashboard...');
+      navigate('/dashboard');
+    } catch (err: any) {
+      console.error('Login error:', err);
+      setError(err.message || 'An unexpected error occurred');
+    } finally {
       setLoading(false);
-      return;
     }
-
-    navigate('/dashboard');
-    setLoading(false);
   };
 
   return (
