@@ -15,7 +15,7 @@ export default function SettingsPage() {
   const saveName = async () => {
     if (!user) return;
     setSaving(true);
-    await supabase.from('profiles').update({ name }).eq('user_id', user.id);
+    await supabase.from('profiles').update({ name }).eq('id', user.id);
     await refreshProfile();
     setSaving(false);
     setSaved(true);
@@ -35,7 +35,7 @@ export default function SettingsPage() {
     setDeleting(true);
     await supabase.from('mistakes').delete().eq('user_id', user.id);
     await supabase.from('payment_requests').delete().eq('user_id', user.id);
-    await supabase.from('profiles').delete().eq('user_id', user.id);
+    await supabase.from('profiles').delete().eq('id', user.id);
     await signOut();
   };
 

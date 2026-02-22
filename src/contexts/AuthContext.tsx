@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data } = await supabase
       .from('profiles')
       .select('*')
-      .eq('user_id', userId)
+      .eq('id', userId)
       .single();
 
     if (data) {
@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await supabase
           .from('profiles')
           .update({ plan: 'expired' })
-          .eq('user_id', userId);
+          .eq('id', userId);
         data.plan = 'expired';
       }
 
