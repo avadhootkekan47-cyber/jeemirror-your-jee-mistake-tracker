@@ -29,7 +29,7 @@ export default function LogMistake() {
     if (!user || !subject || !chapter || !mistakeType || !difficulty) return;
 
     setSaving(true);
-    await supabase.from('mistakes').insert({
+    const { error } = await supabase.from('mistakes').insert({
       user_id: user.id,
       subject,
       chapter,
@@ -38,6 +38,10 @@ export default function LogMistake() {
       notes: notes || null,
     });
     setSaving(false);
+    if (error) {
+      console.error('Failed to insert mistake:', error);
+      return;
+    }
     setSaved(true);
   };
 
