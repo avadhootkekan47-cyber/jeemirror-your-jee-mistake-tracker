@@ -37,13 +37,16 @@ export default function Signup() {
     }
 
     if (data.user) {
-      await supabase.from('profiles').insert({
-        user_id: data.user.id,
+      const { error: profileError } = await supabase.from('profiles').insert({
+        id: data.user.id,
         name,
         email,
         plan: 'trial',
         trial_start_date: new Date().toISOString(),
       });
+      if (profileError) {
+        console.error('Profile insert error:', profileError);
+      }
       navigate('/dashboard');
     }
     setLoading(false);
