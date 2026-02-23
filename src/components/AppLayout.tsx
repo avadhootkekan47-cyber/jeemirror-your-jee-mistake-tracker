@@ -23,7 +23,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen">
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex w-60 flex-col border-r border-border bg-sidebar fixed inset-y-0 left-0 z-30">
-        <div className="p-5">
+        <div className="p-5 flex items-center gap-2">
+          <img src="/logo.png" alt="JEEMirror logo" className="h-8 w-8" />
           <h1 className="text-xl font-bold">
             <span className="text-primary">JEE</span>Mirror
           </h1>
