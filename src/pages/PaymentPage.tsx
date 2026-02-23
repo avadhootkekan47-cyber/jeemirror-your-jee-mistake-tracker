@@ -96,13 +96,29 @@ export default function PaymentPage() {
 
               <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-4 space-y-3">
                 <p className="text-sm font-medium">Pay via PhonePe or any UPI app</p>
-                <div className="flex items-center gap-2">
+                <div className="flex justify-center">
+                  <img
+                    src="/upi-qr.png"
+                    alt="UPI QR Code"
+                    width={200}
+                    height={200}
+                    className="rounded-lg"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                    }}
+                  />
+                  <div className="hidden text-center">
+                    <p className="text-2xl font-bold">9370939333@ybl</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-center gap-2">
                   <span className="text-lg font-bold">9370939333@ybl</span>
                   <button onClick={copyUPI} className="rounded bg-secondary px-3 py-1 text-xs font-medium transition-colors hover:bg-muted">
                     {copied ? 'Copied!' : 'Copy'}
                   </button>
                 </div>
-                <div className="text-2xl font-bold text-primary">₹{amount}</div>
+                <div className="text-2xl font-bold text-primary text-center">₹{amount}</div>
                 <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
                   <li>Open PhonePe, Google Pay, or any UPI app</li>
                   <li>Send exactly ₹{amount} to the UPI ID above</li>
