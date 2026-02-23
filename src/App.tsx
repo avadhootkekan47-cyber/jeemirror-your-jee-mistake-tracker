@@ -16,6 +16,7 @@ import LogMistake from "./pages/LogMistake";
 import HistoryPage from "./pages/HistoryPage";
 import Analytics from "./pages/Analytics";
 import SettingsPage from "./pages/SettingsPage";
+import PaymentPage from "./pages/PaymentPage";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
@@ -43,6 +44,7 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
+            <Route path="/payment" element={<PaymentPage />} />
             <Route path="/dashboard" element={<ProtectedPage><Dashboard /></ProtectedPage>} />
             <Route path="/log" element={<ProtectedPage><LogMistake /></ProtectedPage>} />
             <Route path="/history" element={<ProtectedPage><HistoryPage /></ProtectedPage>} />

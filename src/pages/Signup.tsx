@@ -47,7 +47,7 @@ export default function Signup() {
       if (profileError) {
         console.error('Profile insert error:', profileError);
       }
-      navigate('/dashboard');
+      navigate('/payment');
     }
     setLoading(false);
   };
