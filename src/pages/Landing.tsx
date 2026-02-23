@@ -63,7 +63,7 @@ export default function Landing() {
           to="/signup"
           className="relative inline-block mt-8 rounded-lg bg-primary px-8 py-3.5 text-lg font-semibold text-primary-foreground transition-all hover:opacity-90 hover:scale-105"
         >
-          Start Free Trial
+          Get Started
         </Link>
       </section>
 
@@ -99,8 +99,8 @@ export default function Landing() {
         <h3 className="text-2xl md:text-3xl font-bold text-center mb-10">Simple pricing</h3>
         <div className="grid md:grid-cols-2 gap-5">
           {[
-            { name: 'Monthly', price: '₹99', period: '/month', badge: null },
-            { name: 'Yearly', price: '₹699', period: '/year', badge: 'Save 41%' },
+            { name: 'Monthly', price: '₹50', period: '/month', badge: null },
+            { name: 'Yearly', price: '₹350', period: '/year', badge: 'Save 41%' },
           ].map((plan) => (
             <div key={plan.name} className="relative rounded-xl border border-border bg-card p-6 card-hover">
               {plan.badge && (
@@ -113,7 +113,7 @@ export default function Landing() {
                 <span className="text-4xl font-bold">{plan.price}</span>
                 <span className="text-muted-foreground">{plan.period}</span>
               </div>
-              <p className="text-sm text-primary mt-2">7-day free trial included</p>
+              
               <ul className="mt-5 space-y-2.5">
                 {pricingFeatures.map((f) => (
                   <li key={f} className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -126,7 +126,7 @@ export default function Landing() {
                 to="/signup"
                 className="mt-6 block w-full rounded-lg bg-primary py-3 text-center font-semibold text-primary-foreground transition-all hover:opacity-90"
               >
-                Start Free Trial
+                Get Started
               </Link>
             </div>
           ))}
