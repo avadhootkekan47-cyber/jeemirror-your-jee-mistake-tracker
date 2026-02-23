@@ -19,7 +19,7 @@ export default function UpgradeModal({ open, onClose, dismissable = true }: Upgr
 
   if (!open) return null;
 
-  const amount = selectedPlan === 'monthly' ? 99 : 699;
+  const amount = selectedPlan === 'monthly' ? 50 : 350;
 
   const copyUPI = () => {
     navigator.clipboard.writeText('9370939333@ybl');
@@ -74,7 +74,7 @@ export default function UpgradeModal({ open, onClose, dismissable = true }: Upgr
                     </span>
                   )}
                   <div className="font-semibold capitalize">{plan}</div>
-                  <div className="text-2xl font-bold mt-1">₹{plan === 'monthly' ? 99 : 699}</div>
+                  <div className="text-2xl font-bold mt-1">₹{plan === 'monthly' ? 50 : 350}</div>
                   <div className="text-xs text-muted-foreground">per {plan === 'monthly' ? 'month' : 'year'}</div>
                 </button>
               ))}
