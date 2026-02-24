@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { getSubjectClass } from '@/lib/constants';
+import { CHAPTERS } from '@/lib/constants';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 export default function Analytics() {
@@ -10,6 +11,7 @@ export default function Analytics() {
   const [byType, setByType] = useState<{ name: string; count: number }[]>([]);
   const [daily, setDaily] = useState<{ date: string; count: number }[]>([]);
   const [weakAreas, setWeakAreas] = useState<{ chapter: string; subject: string; count: number }[]>([]);
+  const [chapterHeatmap, setChapterHeatmap] = useState<Record<string, Record<string, number>>>({});
 
   useEffect(() => {
     if (!user) return;
@@ -28,6 +30,8 @@ export default function Analytics() {
       const dayCounts: Record<string, number> = {};
       const chapterCounts: Record<string, { subject: string; count: number }> = {};
 
+      const heatmapData: Record<string, Record<string, number>> = {};
+
       all.forEach((m) => {
         subjectCounts[m.subject] = (subjectCounts[m.subject] || 0) + 1;
         typeCounts[m.mistake_type] = (typeCounts[m.mistake_type] || 0) + 1;
@@ -35,11 +39,16 @@ export default function Analytics() {
         const day = new Date(m.created_at).toISOString().split('T')[0];
         dayCounts[day] = (dayCounts[day] || 0) + 1;
 
+        if (!heatmapData[m.subject]) heatmapData[m.subject] = {};
+        heatmapData[m.subject][m.chapter] = (heatmapData[m.subject][m.chapter] || 0) + 1;
+
         if (!m.is_reviewed) {
           if (!chapterCounts[m.chapter]) chapterCounts[m.chapter] = { subject: m.subject, count: 0 };
           chapterCounts[m.chapter].count++;
         }
       });
+
+      setChapterHeatmap(heatmapData);
 
       setBySubject(Object.entries(subjectCounts).map(([name, count]) => ({ name, count })));
       setByType(Object.entries(typeCounts).map(([name, count]) => ({ name, count })));
@@ -115,6 +124,46 @@ export default function Analytics() {
             <Line type="monotone" dataKey="count" stroke={chartColors.line} strokeWidth={2} dot={{ r: 2 }} />
           </LineChart>
         </ResponsiveContainer>
+      </div>
+
+      {/* Chapter Heatmap */}
+      <div>
+        <h3 className="font-semibold mb-4">Chapter Heatmap</h3>
+        <div className="grid md:grid-cols-3 gap-5">
+          {Object.entries(CHAPTERS).map(([subject, chapters]) => {
+            const subjectData = chapterHeatmap[subject] || {};
+            const maxCount = Math.max(1, ...Object.values(subjectData));
+            return (
+              <div key={subject} className="rounded-xl border border-border bg-card p-4">
+                <h4 className={`text-sm font-semibold mb-3 ${getSubjectClass(subject)} inline-block rounded-md px-2 py-0.5`}>
+                  {subject}
+                </h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {chapters.map((ch) => {
+                    const count = subjectData[ch] || 0;
+                    const intensity = count / maxCount;
+                    const bg = count === 0
+                      ? 'bg-muted'
+                      : intensity < 0.33
+                        ? 'bg-red-400/30'
+                        : intensity < 0.66
+                          ? 'bg-red-500/50'
+                          : 'bg-red-600/80';
+                    return (
+                      <div
+                        key={ch}
+                        title={`${ch}: ${count} mistake${count !== 1 ? 's' : ''}`}
+                        className={`rounded-md px-2 py-1 text-[10px] font-medium ${bg} cursor-default transition-colors`}
+                      >
+                        {ch}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {weakAreas.length > 0 && (
