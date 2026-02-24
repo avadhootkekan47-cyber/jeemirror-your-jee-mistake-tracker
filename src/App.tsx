@@ -16,6 +16,7 @@ import LogMistake from "./pages/LogMistake";
 import HistoryPage from "./pages/HistoryPage";
 import Analytics from "./pages/Analytics";
 import SettingsPage from "./pages/SettingsPage";
+import RevisionPage from "./pages/RevisionPage";
 import PaymentPage from "./pages/PaymentPage";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
@@ -48,6 +49,7 @@ const App = () => (
             <Route path="/dashboard" element={<ProtectedPage><Dashboard /></ProtectedPage>} />
             <Route path="/log" element={<ProtectedPage><LogMistake /></ProtectedPage>} />
             <Route path="/history" element={<ProtectedPage><HistoryPage /></ProtectedPage>} />
+            <Route path="/revision" element={<ProtectedPage><RevisionPage /></ProtectedPage>} />
             <Route path="/analytics" element={<ProtectedPage><Analytics /></ProtectedPage>} />
             <Route path="/settings" element={<ProtectedPage><SettingsPage /></ProtectedPage>} />
             <Route path="*" element={<NotFound />} />
