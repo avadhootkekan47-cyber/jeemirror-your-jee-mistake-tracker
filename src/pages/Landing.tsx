@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Target, BarChart3, Flame, AlertTriangle, BookOpen, Brain, ChevronDown, ChevronUp } from 'lucide-react';
+import { Target, BarChart3, Flame, AlertTriangle, BookOpen, Brain, ChevronDown, ChevronUp, RefreshCw, Grid3X3, CalendarCheck } from 'lucide-react';
 import { useState } from 'react';
 
 const painPoints = [
@@ -9,8 +9,11 @@ const painPoints = [
 ];
 
 const features = [
-  { icon: Target, title: 'Mistake Logging', desc: 'Log any mistake in under 30 seconds.' },
-  { icon: BarChart3, title: 'Pattern Analytics', desc: 'See exactly which subjects and mistake types are hurting your score.' },
+  { icon: Target, title: 'Mistake Tracker', desc: 'Log any mistake in under 30 seconds with subject, chapter, and type.' },
+  { icon: RefreshCw, title: 'Revision Mode', desc: 'Review all unrevised mistakes sorted oldest-first. Never forget a weak spot.' },
+  { icon: Grid3X3, title: 'Chapter Heatmap', desc: 'Visual heatmap showing your weakest chapters at a glance per subject.' },
+  { icon: CalendarCheck, title: 'Study Planner', desc: 'Plan daily tasks, track backlog, and get smart chapter suggestions.' },
+  { icon: BarChart3, title: 'Pattern Analytics', desc: 'Charts and insights on mistake types, subjects, and daily trends.' },
   { icon: Flame, title: 'Streak Tracking', desc: 'Build a daily logging habit and never miss a session.' },
 ];
 
@@ -83,7 +86,7 @@ export default function Landing() {
       {/* Features */}
       <section className="px-6 py-16 max-w-5xl mx-auto">
         <h3 className="text-2xl md:text-3xl font-bold text-center mb-10">How JEEMirror helps</h3>
-        <div className="grid md:grid-cols-3 gap-5">
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-5">
           {features.map((f, i) => (
             <div key={i} className="rounded-xl border border-border bg-card p-6 card-hover">
               <f.icon className="h-8 w-8 text-primary mb-4" />

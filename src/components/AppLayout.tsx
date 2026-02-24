@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { LayoutDashboard, PlusCircle, History, BarChart3, Settings, LogOut, BookOpen } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, History, BarChart3, Settings, LogOut, BookOpen, CalendarCheck } from 'lucide-react';
 
 
 const navItems = [
@@ -8,6 +8,7 @@ const navItems = [
   { to: '/log', icon: PlusCircle, label: 'Log Mistake' },
   { to: '/history', icon: History, label: 'History' },
   { to: '/revision', icon: BookOpen, label: 'Revision' },
+  { to: '/planner', icon: CalendarCheck, label: 'Planner' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
