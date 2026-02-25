@@ -15,7 +15,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
 
       if (loginError) {
         setError(loginError.message);
@@ -23,8 +23,24 @@ export default function Login() {
         return;
       }
 
-      console.log('Login successful, navigating to dashboard...');
-      navigate('/dashboard');
+      if (!data.user) {
+        setError('Login failed. Please try again.');
+        setLoading(false);
+        return;
+      }
+
+      // Fetch profile to determine redirect
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('plan')
+        .eq('id', data.user.id)
+        .single();
+
+      if (profile?.plan === 'premium') {
+        navigate('/dashboard', { replace: true });
+      } else {
+        navigate('/payment', { replace: true });
+      }
     } catch (err: any) {
       console.error('Login error:', err);
       setError(err.message || 'An unexpected error occurred');

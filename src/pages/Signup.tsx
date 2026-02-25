@@ -24,20 +24,30 @@ export default function Signup() {
     }
 
     setLoading(true);
-    const { data, error: signupError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo: window.location.origin },
-    });
+    try {
+      const { data, error: signupError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/payment`,
+          data: { name },
+        },
+      });
 
-    if (signupError) {
-      setError(signupError.message);
-      setLoading(false);
-      return;
-    }
+      if (signupError) {
+        setError(signupError.message);
+        setLoading(false);
+        return;
+      }
 
-    if (data.user) {
-      const { error: profileError } = await supabase.from('profiles').insert({
+      if (!data.user) {
+        setError('Signup failed. Please try again.');
+        setLoading(false);
+        return;
+      }
+
+      // Create profile using upsert to handle duplicates
+      const { error: profileError } = await supabase.from('profiles').upsert({
         id: data.user.id,
         name,
         email,
@@ -48,8 +58,12 @@ export default function Signup() {
         console.error('Profile insert error:', profileError);
       }
       navigate('/payment');
+    } catch (err: any) {
+      console.error('Signup error:', err);
+      setError(err.message || 'An unexpected error occurred');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
