@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Target, BarChart3, Flame, AlertTriangle, BookOpen, Brain, ChevronDown, ChevronUp, RefreshCw, Grid3X3, CalendarCheck } from 'lucide-react';
 import { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const painPoints = [
   { icon: AlertTriangle, text: 'You keep seeing the same chapters in red on every mock report.' },
@@ -34,6 +35,7 @@ const faqs = [
 ];
 
 export default function Landing() {
+  const { user } = useAuth();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   return (
@@ -44,10 +46,10 @@ export default function Landing() {
           <span className="text-primary">JEE</span>Mirror
         </h1>
         <Link
-          to="/login"
+          to={user ? "/dashboard" : "/login"}
           className="rounded-lg border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-secondary"
         >
-          Login
+          {user ? 'Dashboard' : 'Login'}
         </Link>
       </header>
 
@@ -63,10 +65,10 @@ export default function Landing() {
           Log every mistake, find your patterns, eliminate your weak spots. Built by a JEE student, for JEE students.
         </p>
         <Link
-          to="/signup"
+          to={user ? "/dashboard" : "/signup"}
           className="relative inline-block mt-8 rounded-lg bg-primary px-8 py-3.5 text-lg font-semibold text-primary-foreground transition-all hover:opacity-90 hover:scale-105"
         >
-          Get Started
+          {user ? 'Go to Dashboard' : 'Get Started'}
         </Link>
       </section>
 
