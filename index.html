@@ -4,13 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/png" href="/logo.png">
-    <title>JEEMirror — Track Your JEE Mistakes</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#7C3AED">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>JEEMirror — Turn Every Wrong Answer Into Your Next Right One</title>
     <meta name="description" content="Log every mistake, find your patterns, eliminate your weak spots. Built by a JEE student, for JEE students.">
     <meta name="author" content="JEEMirror" />
     
     
     <!-- Open Graph (WhatsApp, Telegram, LinkedIn, Facebook) -->
-    <meta property="og:title" content="JEEMirror — Track Your JEE Mistakes" />
+    <meta property="og:title" content="JEEMirror — Turn Every Wrong Answer Into Your Next Right One" />
     <meta property="og:description" content="Log every mistake, find your patterns, eliminate your weak spots. Built by a JEE student, for JEE students." />
     <meta property="og:image" content="https://jeemirror-your-jee-mistake-tracker.vercel.app/og-image.png" />
     <meta property="og:image:width" content="1200" />
@@ -28,5 +32,11 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-  </body>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js');
+        });
+      }
+    </script>
 </html>

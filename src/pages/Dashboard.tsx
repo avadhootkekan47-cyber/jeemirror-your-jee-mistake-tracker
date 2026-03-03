@@ -133,6 +133,11 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Cloud persistence banner */}
+      <div className="flex items-center gap-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-4 py-2.5 text-sm text-emerald-400">
+        🔒 Your data is securely saved to the cloud — accessible from any device
+      </div>
+
       <h1 className="text-2xl font-bold">Dashboard</h1>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
