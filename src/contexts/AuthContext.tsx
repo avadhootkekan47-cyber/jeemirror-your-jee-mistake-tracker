@@ -88,44 +88,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    let resolved = false;
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        resolved = true;
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          await fetchProfile(session.user.id);
-        } else {
-          setProfile(null);
-        }
-        setLoading(false);
-      }
-    );
-
-    // Immediately check existing session
+    // First: immediately read session from storage without network call
     supabase.auth.getSession().then(({ data: { session } }) => {
-      resolved = true;
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchProfile(session.user.id);
       }
       setLoading(false);
+    }).catch(() => {
+      setUser(null);
+      setSession(null);
+      setLoading(false);
     });
 
-    // Safety timeout — if nothing fires within 3s, stop loading
-    const timeout = setTimeout(() => {
-      if (!resolved) {
-        setLoading(false);
+    // Then listen for future changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      } else {
+        setProfile(null);
       }
-    }, 3000);
+      setLoading(false);
+    });
 
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(timeout);
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
 
