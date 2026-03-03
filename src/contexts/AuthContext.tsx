@@ -88,9 +88,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Set up listener BEFORE getSession to catch all events
+    let resolved = false;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
+        resolved = true;
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
@@ -102,8 +104,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    // Restore session from localStorage
+    // Immediately check existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      resolved = true;
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -112,8 +115,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    // Safety timeout — if nothing fires within 3s, stop loading
+    const timeout = setTimeout(() => {
+      if (!resolved) {
+        setLoading(false);
+      }
+    }, 3000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, []);
+
+
 
   return (
     <AuthContext.Provider value={{ user, session, profile, loading, refreshProfile, signOut }}>
