@@ -14,11 +14,12 @@ const navItems = [
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { profile, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const location = useLocation();
 
-  const initials = profile?.name
-    ? profile.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
+  const displayName = profile?.name || user?.email?.split('@')[0] || '??';
+  const initials = displayName !== '??'
+    ? displayName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
     : '??';
 
   return (
@@ -54,7 +55,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
               {initials}
             </div>
-            <span className="text-sm font-medium truncate">{profile?.name}</span>
+            <span className="text-sm font-medium truncate">{displayName}</span>
           </div>
           <button
             onClick={signOut}
