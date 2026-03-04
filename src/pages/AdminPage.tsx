@@ -17,9 +17,18 @@ interface PaymentRequest {
   created_at: string;
 }
 
+interface TrialUser {
+  id: string;
+  email: string;
+  name: string;
+  trial_start_date: string;
+  created_at: string;
+}
+
 export default function AdminPage() {
   const { user, loading } = useAuth();
   const [requests, setRequests] = useState<PaymentRequest[]>([]);
+  const [trialUsers, setTrialUsers] = useState<TrialUser[]>([]);
   const [fetching, setFetching] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
