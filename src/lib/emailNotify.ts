@@ -5,9 +5,9 @@
 // 3. Create a template with variables: {{user_email}}, {{signup_time}}, {{to_email}}
 // 4. Replace the values below with your actual IDs
 
-const EMAILJS_PUBLIC_KEY = ''; // hwf8F1DzCXwIPTXcw
-const EMAILJS_SERVICE_ID = ''; // service_bweqzbo
-const EMAILJS_TEMPLATE_ID = ''; //template_r4mqxk9
+const EMAILJS_PUBLIC_KEY = 'hwf8F1DzCXwIPTXcw';
+const EMAILJS_SERVICE_ID = 'service_bweqzbo';
+const EMAILJS_TEMPLATE_ID = 'template_r4mqxk9';
 const ADMIN_EMAIL = 'cellux.official@gmail.com';
 
 export async function notifySignup(userEmail: string) {
