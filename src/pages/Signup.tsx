@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
+import { notifySignup } from '@/lib/emailNotify';
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -57,6 +58,8 @@ export default function Signup() {
       if (profileError) {
         console.error('Profile insert error:', profileError);
       }
+      // Send admin notification (fire-and-forget)
+      notifySignup(email);
       navigate('/payment');
     } catch (err: any) {
       console.error('Signup error:', err);
