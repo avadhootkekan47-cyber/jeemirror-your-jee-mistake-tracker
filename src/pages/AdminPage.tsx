@@ -35,8 +35,20 @@ export default function AdminPage() {
   const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email);
 
   useEffect(() => {
-    if (isAdmin) fetchRequests();
+    if (isAdmin) {
+      fetchRequests();
+      fetchTrialUsers();
+    }
   }, [isAdmin]);
+
+  const fetchTrialUsers = async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('plan', 'trial')
+      .order('created_at', { ascending: false });
+    setTrialUsers(data || []);
+  };
 
   const fetchRequests = async () => {
     setFetching(true);
@@ -46,6 +58,16 @@ export default function AdminPage() {
       .order('created_at', { ascending: false });
     setRequests(data || []);
     setFetching(false);
+  };
+
+  const handleActivatePremium = async (userId: string) => {
+    setActionLoading(userId);
+    await supabase
+      .from('profiles')
+      .update({ plan: 'premium' })
+      .eq('id', userId);
+    setActionLoading(null);
+    fetchTrialUsers();
   };
 
   const handleAction = async (req: PaymentRequest, action: 'verified' | 'rejected') => {
