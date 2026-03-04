@@ -42,13 +42,24 @@ export default function AdminPage() {
   }, [isAdmin]);
 
   const fetchTrialUsers = async () => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('plan', 'trial')
-      .order('created_at', { ascending: false });
-    setTrialUsers(data || []);
-  };
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('plan', 'trial')
+    .order('created_at', { ascending: false });
+
+  const { data: payments } = await supabase
+    .from('payment_requests')
+    .select('user_id, user_email');
+
+  const merged = (profiles || []).map(p => ({
+    ...p,
+    email: p.email || 
+      payments?.find(pay => pay.user_id === p.id)?.user_email || 
+      p.id
+  }));
+  setTrialUsers(merged);
+};
 
   const fetchRequests = async () => {
     setFetching(true);
