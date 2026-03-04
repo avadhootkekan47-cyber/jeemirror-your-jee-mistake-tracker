@@ -169,7 +169,7 @@ export default function PaymentPage() {
                 You'll receive a confirmation email at <strong>{profile?.email || user?.email}</strong>.
               </p>
               <p className="text-xs text-muted-foreground">
-                If you have any issues contact: <strong>avadhootkekan47@gmail.com</strong>
+                If you have any issues contact: <strong>cellux.official@gmail.com</strong>
               </p>
             </div>
           )}
