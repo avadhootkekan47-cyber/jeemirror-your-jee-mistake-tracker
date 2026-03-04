@@ -14,7 +14,7 @@ export default function Privacy() {
         <h2 className="text-lg font-semibold text-foreground">Data Deletion</h2>
         <p>You can delete your account and all associated data at any time from the Settings page.</p>
         <h2 className="text-lg font-semibold text-foreground">Contact</h2>
-        <p>For any questions, contact avadhootkekan47@gmail.com.</p>
+        <p>For any questions, contact cellux.official@gmail.com.</p>
       </div>
     </div>
   );
