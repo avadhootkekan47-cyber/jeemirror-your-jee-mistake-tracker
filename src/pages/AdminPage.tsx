@@ -17,17 +17,38 @@ interface PaymentRequest {
   created_at: string;
 }
 
+interface TrialUser {
+  id: string;
+  email: string;
+  name: string;
+  trial_start_date: string;
+  created_at: string;
+}
+
 export default function AdminPage() {
   const { user, loading } = useAuth();
   const [requests, setRequests] = useState<PaymentRequest[]>([]);
+  const [trialUsers, setTrialUsers] = useState<TrialUser[]>([]);
   const [fetching, setFetching] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email);
 
   useEffect(() => {
-    if (isAdmin) fetchRequests();
+    if (isAdmin) {
+      fetchRequests();
+      fetchTrialUsers();
+    }
   }, [isAdmin]);
+
+  const fetchTrialUsers = async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('plan', 'trial')
+      .order('created_at', { ascending: false });
+    setTrialUsers(data || []);
+  };
 
   const fetchRequests = async () => {
     setFetching(true);
@@ -37,6 +58,16 @@ export default function AdminPage() {
       .order('created_at', { ascending: false });
     setRequests(data || []);
     setFetching(false);
+  };
+
+  const handleActivatePremium = async (userId: string) => {
+    setActionLoading(userId);
+    await supabase
+      .from('profiles')
+      .update({ plan: 'premium' })
+      .eq('id', userId);
+    setActionLoading(null);
+    fetchTrialUsers();
   };
 
   const handleAction = async (req: PaymentRequest, action: 'verified' | 'rejected') => {
@@ -131,6 +162,36 @@ export default function AdminPage() {
                       </span>
                     )}
                   </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-xl border border-border bg-card p-6">
+          <h2 className="text-lg font-semibold mb-4">Trial Users</h2>
+          {trialUsers.length === 0 ? (
+            <p className="text-muted-foreground text-sm">No trial users.</p>
+          ) : (
+            <div className="space-y-3">
+              {trialUsers.map((u) => (
+                <div
+                  key={u.id}
+                  className="flex flex-col md:flex-row md:items-center justify-between gap-3 rounded-lg border border-border p-4"
+                >
+                  <div className="space-y-1 text-sm">
+                    <p className="font-medium">{u.email}</p>
+                    <p className="text-muted-foreground text-xs">
+                      Signed up: {new Date(u.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleActivatePremium(u.id)}
+                    disabled={actionLoading === u.id}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                  >
+                    <Check className="h-3.5 w-3.5" /> Activate Premium
+                  </button>
                 </div>
               ))}
             </div>
