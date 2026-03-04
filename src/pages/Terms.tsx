@@ -16,7 +16,7 @@ export default function Terms() {
         <h2 className="text-lg font-semibold text-foreground">Liability</h2>
         <p>JEEMirror is provided "as is" without warranties. We are not liable for any damages arising from use of the service.</p>
         <h2 className="text-lg font-semibold text-foreground">Contact</h2>
-        <p>For questions, reach out to avadhootkekan47@gmail.com.</p>
+        <p>For questions, reach out to cellux.official@gmail.com.</p>
       </div>
     </div>
   );

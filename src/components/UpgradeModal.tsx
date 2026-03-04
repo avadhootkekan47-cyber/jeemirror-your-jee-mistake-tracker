@@ -162,7 +162,7 @@ export default function UpgradeModal({ open, onClose, dismissable = true }: Upgr
               You'll receive a confirmation email at {profile?.email || user?.email}.
             </p>
             <p className="text-xs text-muted-foreground">
-              If you have any issues contact: avadhootkekan47@gmail.com
+              If you have any issues contact: cellux.official@gmail.com
             </p>
             <button
               onClick={() => {
