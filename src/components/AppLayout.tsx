@@ -1,13 +1,15 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { LayoutDashboard, PlusCircle, History, BarChart3, Settings, LogOut, BookOpen, CalendarCheck } from 'lucide-react';
-
+import { LayoutDashboard, PlusCircle, History, BarChart3, Settings, LogOut, BookOpen, CalendarCheck, Sparkles, ClipboardCheck, Layers } from 'lucide-react';
 
 const navItems = [
+  { to: '/today', icon: Sparkles, label: 'Today' },
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/log', icon: PlusCircle, label: 'Log Mistake' },
   { to: '/history', icon: History, label: 'History' },
+  { to: '/review', icon: Layers, label: 'Review Deck' },
   { to: '/revision', icon: BookOpen, label: 'Revision' },
+  { to: '/mock-tests', icon: ClipboardCheck, label: 'Mock Tests' },
   { to: '/planner', icon: CalendarCheck, label: 'Planner' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
   { to: '/settings', icon: Settings, label: 'Settings' },
@@ -29,16 +31,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="p-5 flex items-center gap-2">
           <img src="/logo.png" alt="JEEMirror logo" className="h-8 w-8" />
           <h1 className="text-xl font-bold">
-            <span className="text-primary">JEE</span>Mirror
+            <span className="text-gradient">JEE</span>Mirror
           </h1>
         </div>
-        <nav className="flex-1 px-3 space-y-1">
+        <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                   isActive
                     ? 'bg-sidebar-accent text-primary'
                     : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
@@ -52,7 +54,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </nav>
         <div className="border-t border-border p-3 space-y-2">
           <div className="flex items-center gap-3 px-3 py-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full gradient-primary text-xs font-bold">
               {initials}
             </div>
             <span className="text-sm font-medium truncate">{displayName}</span>
@@ -69,13 +71,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Main content */}
       <div className="flex-1 md:ml-60 flex flex-col min-h-screen">
-        
         <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6">{children}</main>
       </div>
 
-      {/* Mobile bottom nav */}
+      {/* Mobile bottom nav - show first 7 items */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex border-t border-border bg-card">
-        {navItems.map((item) => {
+        {navItems.slice(0, 7).map((item) => {
           const isActive = location.pathname === item.to;
           return (
             <NavLink
