@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AppLayout from "@/components/AppLayout";
@@ -22,6 +22,9 @@ import PaymentPage from "./pages/PaymentPage";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import AdminPage from "./pages/AdminPage";
+import TodayScreen from "./pages/TodayScreen";
+import ReviewDeck from "./pages/ReviewDeck";
+import MockTests from "./pages/MockTests";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,10 +52,13 @@ const App = () => (
             <Route path="/terms" element={<Terms />} />
             <Route path="/payment" element={<PaymentPage />} />
             <Route path="/admin" element={<AdminPage />} />
+            <Route path="/today" element={<ProtectedPage><TodayScreen /></ProtectedPage>} />
             <Route path="/dashboard" element={<ProtectedPage><Dashboard /></ProtectedPage>} />
             <Route path="/log" element={<ProtectedPage><LogMistake /></ProtectedPage>} />
             <Route path="/history" element={<ProtectedPage><HistoryPage /></ProtectedPage>} />
+            <Route path="/review" element={<ProtectedPage><ReviewDeck /></ProtectedPage>} />
             <Route path="/revision" element={<ProtectedPage><RevisionPage /></ProtectedPage>} />
+            <Route path="/mock-tests" element={<ProtectedPage><MockTests /></ProtectedPage>} />
             <Route path="/planner" element={<ProtectedPage><StudyPlanner /></ProtectedPage>} />
             <Route path="/analytics" element={<ProtectedPage><Analytics /></ProtectedPage>} />
             <Route path="/settings" element={<ProtectedPage><SettingsPage /></ProtectedPage>} />
