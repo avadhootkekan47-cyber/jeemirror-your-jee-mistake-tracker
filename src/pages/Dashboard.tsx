@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { getSubjectClass } from '@/lib/constants';
-import { PlusCircle, TrendingUp, Flame, Repeat, Target } from 'lucide-react';
+import { PlusCircle, TrendingUp, Flame, Repeat, Target, Save } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 
@@ -15,27 +15,49 @@ interface Mistake {
   created_at: string;
 }
 
+interface WeeklyGoals {
+  id?: string;
+  chapters_target: number;
+  chapters_done: number;
+  topics_target: number;
+  topics_done: number;
+  backlog_target: number;
+  backlog_done: number;
+  questions_target: number;
+  questions_done: number;
+}
+
+const DEFAULT_GOALS: WeeklyGoals = {
+  chapters_target: 5, chapters_done: 0,
+  topics_target: 10, topics_done: 0,
+  backlog_target: 3, backlog_done: 0,
+  questions_target: 50, questions_done: 0,
+};
+
+const GOAL_METRICS = [
+  { key: 'chapters', label: 'Chapters Completed', emoji: '📖' },
+  { key: 'topics', label: 'Topics Understood', emoji: '💡' },
+  { key: 'backlog', label: 'Backlog Completed', emoji: '📋' },
+  { key: 'questions', label: 'Questions Solved', emoji: '✏️' },
+] as const;
+
 export default function Dashboard() {
   const { user } = useAuth();
   const [stats, setStats] = useState({ total: 0, thisWeek: 0, streak: 0, topType: '—' });
   const [recent, setRecent] = useState<Mistake[]>([]);
-  const [goal, setGoal] = useState<{ id: string; goal_text: string; target_count: number; current_count: number } | null>(null);
-  const [goalInput, setGoalInput] = useState('');
-  const [targetInput, setTargetInput] = useState('10');
-  const [showGoalForm, setShowGoalForm] = useState(false);
+  const [goals, setGoals] = useState<WeeklyGoals>(DEFAULT_GOALS);
+  const [editingGoals, setEditingGoals] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     if (!user) return;
 
     const fetchData = async () => {
-      // Total
       const { count: total } = await supabase
         .from('mistakes')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id);
 
-      // This week
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
       const { count: thisWeek } = await supabase
@@ -44,7 +66,6 @@ export default function Dashboard() {
         .eq('user_id', user.id)
         .gte('created_at', weekAgo.toISOString());
 
-      // All dates for streak
       const { data: allDates } = await supabase
         .from('mistakes')
         .select('created_at')
@@ -56,7 +77,6 @@ export default function Dashboard() {
         const uniqueDays = [...new Set(allDates.map((d) => new Date(d.created_at).toDateString()))];
         const today = new Date().toDateString();
         const yesterday = new Date(Date.now() - 86400000).toDateString();
-
         if (uniqueDays[0] === today || uniqueDays[0] === yesterday) {
           streak = 1;
           for (let i = 1; i < uniqueDays.length; i++) {
@@ -69,7 +89,6 @@ export default function Dashboard() {
         }
       }
 
-      // Most repeated type
       const { data: types } = await supabase
         .from('mistakes')
         .select('mistake_type')
@@ -84,7 +103,6 @@ export default function Dashboard() {
 
       setStats({ total: total || 0, thisWeek: thisWeek || 0, streak, topType });
 
-      // Recent
       const { data: recentData } = await supabase
         .from('mistakes')
         .select('id, subject, chapter, mistake_type, created_at')
@@ -94,35 +112,51 @@ export default function Dashboard() {
 
       setRecent(recentData || []);
 
-      // Fetch weekly goal
+      // Fetch weekly goals
       const weekStart = new Date();
       weekStart.setDate(weekStart.getDate() - weekStart.getDay());
       weekStart.setHours(0, 0, 0, 0);
 
       const { data: goalData } = await supabase
-        .from('goals')
+        .from('weekly_goals')
         .select('*')
         .eq('user_id', user.id)
-        .gte('week_start_date', weekStart.toISOString().split('T')[0])
+        .gte('week_start', weekStart.toISOString().split('T')[0])
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
       if (goalData) {
-        // Count reviews this week
-        const { count: reviewedThisWeek } = await supabase
-          .from('mistakes')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .eq('is_reviewed', true)
-          .gte('reviewed_at', weekStart.toISOString());
-
-        setGoal({ ...goalData, current_count: reviewedThisWeek || 0 });
+        setGoals(goalData);
       }
     };
 
     fetchData();
   }, [user]);
+
+  const saveGoals = async () => {
+    if (!user) return;
+    const weekStart = new Date();
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+    weekStart.setHours(0, 0, 0, 0);
+
+    const payload = {
+      user_id: user.id,
+      week_start: weekStart.toISOString().split('T')[0],
+      ...goals,
+    };
+
+    const { error } = goals.id
+      ? await supabase.from('weekly_goals').update(payload).eq('id', goals.id)
+      : await supabase.from('weekly_goals').upsert(payload, { onConflict: 'user_id,week_start' });
+
+    if (error) {
+      toast({ title: 'Error', description: 'Could not save goals', variant: 'destructive' });
+    } else {
+      toast({ title: 'Saved!', description: 'Weekly goals updated' });
+      setEditingGoals(false);
+    }
+  };
 
   const statCards = [
     { label: 'Total Mistakes', value: stats.total, icon: TrendingUp },
@@ -133,7 +167,6 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Cloud persistence banner */}
       <div className="flex items-center gap-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-4 py-2.5 text-sm text-emerald-400">
         🔒 Your data is securely saved to the cloud — accessible from any device
       </div>
@@ -158,86 +191,60 @@ export default function Dashboard() {
         Log New Mistake
       </Link>
 
-      {/* Weekly Goal */}
+      {/* Weekly Goals — 4 metrics */}
       <div className="rounded-xl border border-border bg-card p-5">
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold flex items-center gap-2">
             <Target className="h-5 w-5 text-primary" />
-            Weekly Goal
+            Weekly Goals
           </h2>
-          {!showGoalForm && (
-            <button
-              onClick={() => setShowGoalForm(true)}
-              className="text-sm text-primary hover:underline"
-            >
-              {goal ? 'Change Goal' : 'Set Goal'}
-            </button>
-          )}
+          <button
+            onClick={() => editingGoals ? saveGoals() : setEditingGoals(true)}
+            className="flex items-center gap-1.5 text-sm text-primary hover:underline"
+          >
+            {editingGoals ? <><Save className="h-3.5 w-3.5" /> Save</> : 'Edit Targets'}
+          </button>
         </div>
 
-        {showGoalForm && (
-          <div className="space-y-3 mb-4">
-            <input
-              type="text"
-              placeholder="e.g. Review 10 mistakes this week"
-              value={goalInput}
-              onChange={(e) => setGoalInput(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-            />
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-muted-foreground">Target reviews:</label>
-              <input
-                type="number"
-                min="1"
-                value={targetInput}
-                onChange={(e) => setTargetInput(e.target.value)}
-                className="w-20 rounded-lg border border-border bg-background px-3 py-2 text-sm"
-              />
-              <button
-                onClick={async () => {
-                  if (!user || !goalInput.trim()) return;
-                  const weekStart = new Date();
-                  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-                  weekStart.setHours(0, 0, 0, 0);
+        <div className="space-y-4">
+          {GOAL_METRICS.map(({ key, label, emoji }) => {
+            const done = goals[`${key}_done` as keyof WeeklyGoals] as number;
+            const target = goals[`${key}_target` as keyof WeeklyGoals] as number;
+            const pct = target > 0 ? Math.min(100, Math.round((done / target) * 100)) : 0;
 
-                  const { data, error } = await supabase.from('goals').insert({
-                    user_id: user.id,
-                    goal_text: goalInput.trim(),
-                    target_count: parseInt(targetInput) || 10,
-                    current_count: 0,
-                    week_start_date: weekStart.toISOString().split('T')[0],
-                  }).select().single();
-
-                  if (error) {
-                    toast({ title: 'Error', description: 'Could not save goal', variant: 'destructive' });
-                  } else {
-                    setGoal(data);
-                    setShowGoalForm(false);
-                    setGoalInput('');
-                    toast({ title: 'Goal set!', description: goalInput });
-                  }
-                }}
-                className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground"
-              >
-                Save
-              </button>
-              <button onClick={() => setShowGoalForm(false)} className="text-sm text-muted-foreground hover:underline">Cancel</button>
-            </div>
-          </div>
-        )}
-
-        {goal ? (
-          <div>
-            <p className="text-sm text-muted-foreground mb-2">{goal.goal_text}</p>
-            <Progress value={Math.min(100, (goal.current_count / goal.target_count) * 100)} className="h-3 mb-1" />
-            <p className="text-xs text-muted-foreground">
-              {goal.current_count} / {goal.target_count} reviews completed
-              {goal.current_count >= goal.target_count && ' 🎉'}
-            </p>
-          </div>
-        ) : !showGoalForm ? (
-          <p className="text-sm text-muted-foreground">No goal set for this week. Set one to stay on track!</p>
-        ) : null}
+            return (
+              <div key={key} className="space-y-1.5">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium">{emoji} {label}</span>
+                  <span className="text-muted-foreground">
+                    {editingGoals ? (
+                      <span className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          min={0}
+                          value={done}
+                          onChange={(e) => setGoals(prev => ({ ...prev, [`${key}_done`]: parseInt(e.target.value) || 0 }))}
+                          className="w-14 rounded border border-border bg-background px-2 py-0.5 text-sm text-center"
+                        />
+                        /
+                        <input
+                          type="number"
+                          min={1}
+                          value={target}
+                          onChange={(e) => setGoals(prev => ({ ...prev, [`${key}_target`]: parseInt(e.target.value) || 1 }))}
+                          className="w-14 rounded border border-border bg-background px-2 py-0.5 text-sm text-center"
+                        />
+                      </span>
+                    ) : (
+                      `${done} / ${target} ${pct >= 100 ? '🎉' : ''}`
+                    )}
+                  </span>
+                </div>
+                <Progress value={pct} className="h-2.5" />
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <div>
