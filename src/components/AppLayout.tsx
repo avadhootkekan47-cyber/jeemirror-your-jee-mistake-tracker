@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { LayoutDashboard, PlusCircle, History, BarChart3, Settings, LogOut, BookOpen, CalendarCheck, Sparkles, ClipboardCheck } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, History, BarChart3, Settings, LogOut, BookOpen, CalendarCheck, Sparkles, ClipboardCheck, MoreHorizontal } from 'lucide-react';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 
 const navItems = [
   { to: '/today', icon: Sparkles, label: 'Today' },
@@ -14,8 +16,12 @@ const navItems = [
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 
+const mobileBottomItems = navItems.slice(0, 4); // Today, Dashboard, Log, History
+const moreItems = navItems.slice(4); // Revision, Mock Tests, Planner, Analytics, Settings
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, profile, signOut } = useAuth();
+  const [moreOpen, setMoreOpen] = useState(false);
   const location = useLocation();
 
   const displayName = profile?.name || user?.email?.split('@')[0] || '??';
@@ -73,9 +79,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6">{children}</main>
       </div>
 
-      {/* Mobile bottom nav - show first 7 items */}
+      {/* Mobile bottom nav - 4 items + More */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex border-t border-border bg-card">
-        {navItems.slice(0, 7).map((item) => {
+        {mobileBottomItems.map((item) => {
           const isActive = location.pathname === item.to;
           return (
             <NavLink
@@ -90,7 +96,50 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </NavLink>
           );
         })}
+        <button
+          onClick={() => setMoreOpen(true)}
+          className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[10px] transition-colors ${
+            moreItems.some(i => location.pathname === i.to) ? 'text-primary' : 'text-muted-foreground'
+          }`}
+        >
+          <MoreHorizontal className="h-5 w-5" />
+          More
+        </button>
       </nav>
+
+      {/* More drawer */}
+      <Drawer open={moreOpen} onOpenChange={setMoreOpen}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>More</DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 pb-6 space-y-1">
+            {moreItems.map((item) => {
+              const isActive = location.pathname === item.to;
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  onClick={() => setMoreOpen(false)}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors ${
+                    isActive ? 'bg-accent text-primary' : 'text-muted-foreground hover:bg-accent/50'
+                  }`}
+                >
+                  <item.icon className="h-5 w-5" />
+                  {item.label}
+                </NavLink>
+              );
+            })}
+            <button
+              onClick={() => { signOut(); setMoreOpen(false); }}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm text-muted-foreground transition-colors hover:bg-accent/50"
+            >
+              <LogOut className="h-5 w-5" />
+              Logout
+            </button>
+          </div>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }

@@ -1,21 +1,14 @@
 {
   "name": "JEEMirror",
   "short_name": "JEEMirror",
-  "description": "Turn every wrong answer into your next right one",
+  "description": "Track your JEE mistakes and eliminate weak spots",
   "start_url": "/",
   "display": "standalone",
+  "background_color": "#0A0A0F",
   "theme_color": "#7C3AED",
-  "background_color": "#0a0a0a",
+  "orientation": "portrait",
   "icons": [
-    {
-      "src": "/logo.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/logo.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
+    { "src": "/og-image.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/og-image.png", "sizes": "512x512", "type": "image/png" }
   ]
 }
