@@ -23,7 +23,7 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import AdminPage from "./pages/AdminPage";
 import TodayScreen from "./pages/TodayScreen";
-import ReviewDeck from "./pages/ReviewDeck";
+// ReviewDeck removed — replaced by Chapter Revision
 import MockTests from "./pages/MockTests";
 import NotFound from "./pages/NotFound";
 
@@ -56,7 +56,7 @@ const App = () => (
             <Route path="/dashboard" element={<ProtectedPage><Dashboard /></ProtectedPage>} />
             <Route path="/log" element={<ProtectedPage><LogMistake /></ProtectedPage>} />
             <Route path="/history" element={<ProtectedPage><HistoryPage /></ProtectedPage>} />
-            <Route path="/review" element={<ProtectedPage><ReviewDeck /></ProtectedPage>} />
+            {/* Review Deck removed — replaced by Chapter Revision */}
             <Route path="/revision" element={<ProtectedPage><RevisionPage /></ProtectedPage>} />
             <Route path="/mock-tests" element={<ProtectedPage><MockTests /></ProtectedPage>} />
             <Route path="/planner" element={<ProtectedPage><StudyPlanner /></ProtectedPage>} />
