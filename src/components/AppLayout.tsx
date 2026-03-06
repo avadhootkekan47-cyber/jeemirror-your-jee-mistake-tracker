@@ -1,14 +1,13 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { LayoutDashboard, PlusCircle, History, BarChart3, Settings, LogOut, BookOpen, CalendarCheck, Sparkles, ClipboardCheck, Layers } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, History, BarChart3, Settings, LogOut, BookOpen, CalendarCheck, Sparkles, ClipboardCheck } from 'lucide-react';
 
 const navItems = [
   { to: '/today', icon: Sparkles, label: 'Today' },
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/log', icon: PlusCircle, label: 'Log Mistake' },
   { to: '/history', icon: History, label: 'History' },
-  { to: '/review', icon: Layers, label: 'Review Deck' },
-  { to: '/revision', icon: BookOpen, label: 'Revision' },
+  { to: '/revision', icon: BookOpen, label: 'Chapter Revision' },
   { to: '/mock-tests', icon: ClipboardCheck, label: 'Mock Tests' },
   { to: '/planner', icon: CalendarCheck, label: 'Planner' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
