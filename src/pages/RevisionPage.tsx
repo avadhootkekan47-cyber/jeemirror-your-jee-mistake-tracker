@@ -1,110 +1,144 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { getSubjectClass } from '@/lib/constants';
-import { CheckCircle, BookOpen } from 'lucide-react';
+import { SUBJECTS, CHAPTERS, CHEMISTRY_GROUPS, REVISION_STATUSES, type RevisionStatus } from '@/lib/constants';
+import { ChevronDown, ChevronRight, BookOpen } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 
-interface Mistake {
-  id: string;
-  subject: string;
+interface ChapterStatus {
   chapter: string;
-  mistake_type: string;
-  notes: string | null;
-  created_at: string;
+  subject: string;
+  status: RevisionStatus;
 }
+
+const STATUS_COLORS: Record<RevisionStatus, string> = {
+  'Not Started': 'bg-muted text-muted-foreground',
+  'In Progress': 'bg-accent/20 text-accent border border-accent/30',
+  'Revised Once': 'bg-primary/20 text-primary border border-primary/30',
+  'Fully Revised': 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30',
+};
 
 export default function RevisionPage() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [mistakes, setMistakes] = useState<Mistake[]>([]);
+  const [statuses, setStatuses] = useState<Record<string, RevisionStatus>>({});
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({ Physics: true });
   const [loading, setLoading] = useState(true);
 
-  const fetchMistakes = async () => {
-    if (!user) return;
-    setLoading(true);
-    const { data } = await supabase
-      .from('mistakes')
-      .select('id, subject, chapter, mistake_type, notes, created_at')
-      .eq('user_id', user.id)
-      .eq('is_reviewed', false)
-      .order('created_at', { ascending: true });
-
-    setMistakes(data || []);
-    setLoading(false);
-  };
-
   useEffect(() => {
-    fetchMistakes();
+    if (!user) return;
+    (async () => {
+      const { data } = await supabase
+        .from('chapter_revision')
+        .select('chapter, subject, status')
+        .eq('user_id', user.id);
+      const map: Record<string, RevisionStatus> = {};
+      data?.forEach((d: ChapterStatus) => { map[`${d.subject}::${d.chapter}`] = d.status as RevisionStatus; });
+      setStatuses(map);
+      setLoading(false);
+    })();
   }, [user]);
 
-  const markAsRevised = async (id: string) => {
+  const updateStatus = async (subject: string, chapter: string, status: RevisionStatus) => {
+    if (!user) return;
+    const key = `${subject}::${chapter}`;
+    setStatuses(prev => ({ ...prev, [key]: status }));
+
     const { error } = await supabase
-      .from('mistakes')
-      .update({ is_reviewed: true, reviewed_at: new Date().toISOString() })
-      .eq('id', id);
+      .from('chapter_revision')
+      .upsert({
+        user_id: user.id,
+        subject,
+        chapter,
+        status,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id,subject,chapter' });
 
     if (error) {
-      toast({ title: 'Error', description: 'Failed to mark as revised', variant: 'destructive' });
-      return;
+      toast({ title: 'Error', description: 'Could not save status', variant: 'destructive' });
     }
-
-    setMistakes((prev) => prev.filter((m) => m.id !== id));
-    toast({ title: 'Revised!', description: 'Mistake marked as reviewed' });
   };
+
+  const getSubjectProgress = (subject: string) => {
+    const chapters = CHAPTERS[subject] || [];
+    const fullyRevised = chapters.filter(c => statuses[`${subject}::${c}`] === 'Fully Revised').length;
+    return chapters.length > 0 ? Math.round((fullyRevised / chapters.length) * 100) : 0;
+  };
+
+  const toggleExpand = (key: string) => {
+    setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const renderChapterList = (subject: string, chapters: string[], groupLabel?: string) => (
+    <div key={groupLabel || subject} className="space-y-1">
+      {groupLabel && (
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 pt-2">{groupLabel}</p>
+      )}
+      {chapters.map(chapter => {
+        const key = `${subject}::${chapter}`;
+        const current = statuses[key] || 'Not Started';
+        return (
+          <div key={chapter} className="flex items-center justify-between rounded-lg border border-border bg-card/50 px-3 py-2.5 gap-2">
+            <span className="text-sm font-medium truncate flex-1">{chapter}</span>
+            <select
+              value={current}
+              onChange={(e) => updateStatus(subject, chapter, e.target.value as RevisionStatus)}
+              className={`rounded-md px-2 py-1 text-xs font-semibold cursor-pointer appearance-none ${STATUS_COLORS[current]}`}
+              style={{ minWidth: 120 }}
+            >
+              {REVISION_STATUSES.map(s => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  if (loading) return <div className="text-center text-muted-foreground py-12">Loading…</div>;
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Revision Mode</h1>
-        <div className="flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary">
-          <BookOpen className="h-4 w-4" />
-          {mistakes.length} mistake{mistakes.length !== 1 ? 's' : ''} pending revision
-        </div>
+      <div className="flex items-center gap-3">
+        <BookOpen className="h-6 w-6 text-primary" />
+        <h1 className="text-2xl font-bold">Chapter Revision</h1>
       </div>
 
-      {loading ? (
-        <div className="text-center text-muted-foreground py-12">Loading…</div>
-      ) : mistakes.length === 0 ? (
-        <div className="rounded-xl border border-border bg-card p-12 text-center">
-          <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-3" />
-          <h3 className="text-lg font-semibold">All caught up!</h3>
-          <p className="text-muted-foreground mt-1">No pending mistakes to revise.</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {mistakes.map((m) => (
-            <div key={m.id} className="rounded-xl border border-border bg-card p-4 card-hover">
-              <div className="flex items-start gap-3">
-                <span className={`rounded-md px-2 py-0.5 text-xs font-semibold mt-0.5 ${getSubjectClass(m.subject)}`}>
-                  {m.subject}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium">{m.chapter}</div>
-                  <div className="text-sm text-muted-foreground">{m.mistake_type}</div>
-                  {m.notes && (
-                    <p className="text-sm text-muted-foreground mt-2 bg-muted/50 rounded-lg p-2.5">
-                      {m.notes}
-                    </p>
-                  )}
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {new Date(m.created_at).toLocaleDateString()}
-                  </span>
-                  <button
-                    onClick={() => markAsRevised(m.id)}
-                    className="flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-green-700"
-                  >
-                    <CheckCircle className="h-3.5 w-3.5" />
-                    Mark as Revised
-                  </button>
-                </div>
+      {SUBJECTS.map(subject => {
+        const progress = getSubjectProgress(subject);
+        const isOpen = expanded[subject];
+        return (
+          <div key={subject} className="rounded-xl border border-border bg-card overflow-hidden">
+            <button
+              onClick={() => toggleExpand(subject)}
+              className="flex items-center justify-between w-full px-4 py-3 hover:bg-secondary/50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                {isOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                <span className="font-semibold text-lg">{subject}</span>
+                <span className="text-xs text-muted-foreground">({CHAPTERS[subject].length} chapters)</span>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-primary">{progress}%</span>
+                <Progress value={progress} className="h-2 w-24" />
+              </div>
+            </button>
+            {isOpen && (
+              <div className="px-3 pb-3 space-y-1">
+                {subject === 'Chemistry' ? (
+                  Object.entries(CHEMISTRY_GROUPS).map(([group, chapters]) =>
+                    renderChapterList(subject, chapters, group)
+                  )
+                ) : (
+                  renderChapterList(subject, CHAPTERS[subject])
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

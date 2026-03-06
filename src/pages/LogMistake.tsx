@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { SUBJECTS, CHAPTERS, MISTAKE_TYPES } from '@/lib/constants';
+import { SUBJECTS, CHAPTERS, CHEMISTRY_GROUPS, MISTAKE_TYPES } from '@/lib/constants';
 import { Check, ChevronDown, ChevronUp, Atom, FlaskConical, Calculator } from 'lucide-react';
 
 const SUBJECT_ICONS: Record<string, React.ReactNode> = {
@@ -70,8 +70,8 @@ export default function LogMistake() {
     return (
       <div className="flex min-h-[60vh] items-center justify-center animate-fade-in">
         <div className="text-center space-y-4">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success/20">
-            <Check className="h-8 w-8 text-success" />
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20">
+            <Check className="h-8 w-8 text-emerald-400" />
           </div>
           <h2 className="text-xl font-bold">Mistake Logged!</h2>
           <div className="flex gap-3 justify-center">
@@ -86,6 +86,36 @@ export default function LogMistake() {
       </div>
     );
   }
+
+  const renderChapterList = () => {
+    if (subject === 'Chemistry') {
+      return Object.entries(CHEMISTRY_GROUPS).map(([group, chapters]) => (
+        <div key={group}>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 mt-3">{group}</p>
+          <div className="space-y-2">
+            {chapters.map((c) => (
+              <button
+                key={c}
+                onClick={() => { setChapter(c); setStep(3); }}
+                className="w-full rounded-xl border border-border bg-card p-4 text-left font-medium transition-all hover:border-primary hover:bg-primary/5 active:scale-[0.98]"
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+      ));
+    }
+    return (CHAPTERS[subject] || []).map((c) => (
+      <button
+        key={c}
+        onClick={() => { setChapter(c); setStep(3); }}
+        className="w-full rounded-xl border border-border bg-card p-4 text-left font-medium transition-all hover:border-primary hover:bg-primary/5 active:scale-[0.98]"
+      >
+        {c}
+      </button>
+    ));
+  };
 
   return (
     <div className="max-w-lg mx-auto animate-fade-in">
@@ -152,15 +182,7 @@ export default function LogMistake() {
           </button>
           <p className="text-sm text-muted-foreground">Pick a chapter in <span className="font-medium text-foreground">{subject}</span></p>
           <div className="max-h-[50vh] overflow-y-auto space-y-2 pr-1">
-            {(CHAPTERS[subject] || []).map((c) => (
-              <button
-                key={c}
-                onClick={() => { setChapter(c); setStep(3); }}
-                className="w-full rounded-xl border border-border bg-card p-4 text-left font-medium transition-all hover:border-primary hover:bg-primary/5 active:scale-[0.98]"
-              >
-                {c}
-              </button>
-            ))}
+            {renderChapterList()}
           </div>
         </div>
       )}
@@ -179,10 +201,7 @@ export default function LogMistake() {
             {MISTAKE_TYPES.map((t) => (
               <button
                 key={t}
-                onClick={() => {
-                  setMistakeType(t);
-                  // Don't auto-save, show notes option first
-                }}
+                onClick={() => setMistakeType(t)}
                 className={`rounded-xl border p-4 text-left text-sm font-medium transition-all active:scale-[0.98] ${
                   mistakeType === t
                     ? 'border-primary bg-primary/10 text-primary'
@@ -196,7 +215,6 @@ export default function LogMistake() {
 
           {mistakeType && (
             <div className="space-y-3 animate-fade-in mt-4">
-              {/* Collapsible notes */}
               <button
                 onClick={() => setNotesOpen(!notesOpen)}
                 className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
