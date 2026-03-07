@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { LayoutDashboard, PlusCircle, History, BarChart3, Settings, LogOut, BookOpen, CalendarCheck, Sparkles, ClipboardCheck, MoreHorizontal } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, History, BarChart3, Settings, LogOut, BookOpen, CalendarCheck, Sparkles, ClipboardCheck, MoreHorizontal, Crown } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 
 const navItems = [
@@ -16,25 +16,28 @@ const navItems = [
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 
-const mobileBottomItems = navItems.slice(0, 4); // Today, Dashboard, Log, History
-const moreItems = navItems.slice(4); // Revision, Mock Tests, Planner, Analytics, Settings
+const mobileBottomItems = navItems.slice(0, 4);
+const moreItems = navItems.slice(4);
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, profile, signOut } = useAuth();
   const [moreOpen, setMoreOpen] = useState(false);
   const location = useLocation();
 
-  const displayName = profile?.name || user?.email?.split('@')[0] || '??';
+  const displayName = profile?.name || profile?.full_name || user?.email?.split('@')[0] || '??';
   const initials = displayName !== '??'
     ? displayName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
     : '??';
 
+  const planBadge = profile?.plan === 'premium' ? 'Premium' : profile?.plan === 'trial' ? 'Trial' : 'Expired';
+  const planColor = profile?.plan === 'premium' ? 'bg-accent/15 text-accent' : profile?.plan === 'trial' ? 'bg-warning/15 text-warning' : 'bg-destructive/15 text-destructive';
+
   return (
     <div className="flex min-h-screen">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-60 flex-col border-r border-border bg-sidebar fixed inset-y-0 left-0 z-30">
+      <aside className="hidden md:flex w-[260px] flex-col border-r border-sidebar-border bg-sidebar fixed inset-y-0 left-0 z-30">
         <div className="p-5 flex items-center gap-2">
-          <img src="/logo.png" alt="JEEMirror logo" className="h-8 w-8" />
+          <img src="/logo.png" alt="JEEMirror logo" className="h-8 w-8 drop-shadow-[0_0_8px_hsl(253,63%,55%,0.4)]" />
           <h1 className="text-xl font-bold">
             <span className="text-gradient">JEE</span>Mirror
           </h1>
@@ -45,9 +48,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
                   isActive
-                    ? 'bg-sidebar-accent text-primary'
+                    ? 'bg-sidebar-accent text-primary border-l-2 border-primary'
                     : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
                 }`
               }
@@ -57,12 +60,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </NavLink>
           ))}
         </nav>
-        <div className="border-t border-border p-3 space-y-2">
+        <div className="border-t border-sidebar-border p-3 space-y-2">
           <div className="flex items-center gap-3 px-3 py-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full gradient-primary text-xs font-bold">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full gradient-primary text-xs font-bold text-primary-foreground">
               {initials}
             </div>
-            <span className="text-sm font-medium truncate">{displayName}</span>
+            <div className="flex-1 min-w-0">
+              <span className="text-sm font-medium truncate block">{displayName}</span>
+              <span className={`text-[10px] font-semibold rounded-md px-1.5 py-0.5 ${planColor}`}>{planBadge}</span>
+            </div>
           </div>
           <button
             onClick={signOut}
@@ -75,20 +81,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 md:ml-60 flex flex-col min-h-screen">
+      <div className="flex-1 md:ml-[260px] flex flex-col min-h-screen">
         <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6">{children}</main>
       </div>
 
-      {/* Mobile bottom nav - 4 items + More */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex border-t border-border bg-card">
+      {/* Mobile bottom nav - glassmorphism */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex border-t border-border glass">
         {mobileBottomItems.map((item) => {
           const isActive = location.pathname === item.to;
           return (
             <NavLink
               key={item.to}
               to={item.to}
-              className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[10px] transition-colors ${
-                isActive ? 'text-primary' : 'text-muted-foreground'
+              className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[10px] transition-colors min-h-[48px] justify-center ${
+                isActive ? 'text-primary drop-shadow-[0_0_6px_hsl(253,63%,55%,0.5)]' : 'text-muted-foreground'
               }`}
             >
               <item.icon className="h-5 w-5" />
@@ -98,7 +104,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         })}
         <button
           onClick={() => setMoreOpen(true)}
-          className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[10px] transition-colors ${
+          className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[10px] transition-colors min-h-[48px] justify-center ${
             moreItems.some(i => location.pathname === i.to) ? 'text-primary' : 'text-muted-foreground'
           }`}
         >
@@ -121,8 +127,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   key={item.to}
                   to={item.to}
                   onClick={() => setMoreOpen(false)}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors ${
-                    isActive ? 'bg-accent text-primary' : 'text-muted-foreground hover:bg-accent/50'
+                  className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors min-h-[48px] ${
+                    isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-secondary'
                   }`}
                 >
                   <item.icon className="h-5 w-5" />
@@ -132,7 +138,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             })}
             <button
               onClick={() => { signOut(); setMoreOpen(false); }}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm text-muted-foreground transition-colors hover:bg-accent/50"
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm text-muted-foreground transition-colors hover:bg-secondary min-h-[48px]"
             >
               <LogOut className="h-5 w-5" />
               Logout

@@ -54,6 +54,7 @@ export default {
         chemistry: "hsl(var(--chemistry))",
         mathematics: "hsl(var(--mathematics))",
         success: "hsl(var(--success))",
+        warning: "hsl(var(--warning))",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",

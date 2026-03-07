@@ -6,8 +6,11 @@ export interface Profile {
   id: string;
   user_id: string;
   name: string;
+  full_name?: string;
   email: string;
   plan: 'trial' | 'premium' | 'expired';
+  plan_type?: 'monthly' | 'yearly';
+  premium_expiry?: string;
   trial_start_date: string;
   created_at: string;
 }
@@ -40,7 +43,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) {
         console.error('Profile fetch error:', error);
         if (retryCount < 1) {
-          console.log('Retrying profile fetch in 1s...');
           await new Promise(resolve => setTimeout(resolve, 1000));
           return fetchProfile(userId, retryCount + 1);
         }
@@ -49,7 +51,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!data) {
         if (retryCount < 1) {
-          console.log('Profile not found, retrying in 1s...');
           await new Promise(resolve => setTimeout(resolve, 1000));
           return fetchProfile(userId, retryCount + 1);
         }
@@ -88,7 +89,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // First: immediately read session from storage without network call
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -102,7 +102,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    // Then listen for future changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -116,8 +115,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, []);
-
-
 
   return (
     <AuthContext.Provider value={{ user, session, profile, loading, refreshProfile, signOut }}>

@@ -13,7 +13,7 @@ declare global {
 
 let initialized = false;
 
-export async function notifySignup(userEmail: string) {
+export async function notifySignup(userEmail: string, userName?: string, planType?: string, paymentId?: string) {
   try {
     if (!window.emailjs) {
       console.warn('EmailJS SDK not loaded');
@@ -25,8 +25,11 @@ export async function notifySignup(userEmail: string) {
     }
     await window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
       user_email: userEmail,
+      user_name: userName || 'Unknown',
+      plan_type: planType || 'trial',
+      payment_id: paymentId || 'N/A',
       signup_time: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
-      message: `New JEEMirror signup: ${userEmail}`,
+      message: `New JEEMirror signup: ${userName || userEmail} (${userEmail}) — Plan: ${planType || 'trial'}${paymentId ? ` — Payment: ${paymentId}` : ''}`,
     });
     console.log('Signup notification sent');
   } catch (err) {

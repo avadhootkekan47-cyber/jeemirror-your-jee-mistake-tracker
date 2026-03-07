@@ -42,12 +42,14 @@ const GOAL_METRICS = [
 ] as const;
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [stats, setStats] = useState({ total: 0, thisWeek: 0, streak: 0, topType: '—' });
   const [recent, setRecent] = useState<Mistake[]>([]);
   const [goals, setGoals] = useState<WeeklyGoals>(DEFAULT_GOALS);
   const [editingGoals, setEditingGoals] = useState(false);
   const { toast } = useToast();
+
+  const displayName = profile?.name || profile?.full_name || user?.email?.split('@')[0] || 'Student';
 
   useEffect(() => {
     if (!user) return;
@@ -159,25 +161,27 @@ export default function Dashboard() {
   };
 
   const statCards = [
-    { label: 'Total Mistakes', value: stats.total, icon: TrendingUp },
-    { label: 'This Week', value: stats.thisWeek, icon: TrendingUp },
-    { label: 'Current Streak', value: `${stats.streak} day${stats.streak !== 1 ? 's' : ''}`, icon: Flame },
-    { label: 'Most Repeated', value: stats.topType, icon: Repeat },
+    { label: 'Total Mistakes', value: stats.total, icon: TrendingUp, color: 'text-primary' },
+    { label: 'This Week', value: stats.thisWeek, icon: TrendingUp, color: 'text-accent' },
+    { label: 'Current Streak', value: `${stats.streak} day${stats.streak !== 1 ? 's' : ''}`, icon: Flame, color: 'text-warning' },
+    { label: 'Most Repeated', value: stats.topType, icon: Repeat, color: 'text-destructive' },
   ];
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center gap-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-4 py-2.5 text-sm text-emerald-400">
+      <div className="flex items-center gap-2 rounded-xl bg-accent/10 border border-accent/20 px-4 py-2.5 text-sm text-accent">
         🔒 Your data is securely saved to the cloud — accessible from any device
       </div>
 
-      <h1 className="text-2xl font-bold">Dashboard</h1>
+      <h1 className="text-2xl font-bold">
+        Welcome back, <span className="text-gradient">{displayName}</span>
+      </h1>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {statCards.map((s) => (
-          <div key={s.label} className="rounded-xl border border-border bg-card p-4 card-hover">
-            <s.icon className="h-4 w-4 text-muted-foreground mb-2" />
-            <div className="text-2xl font-bold">{s.value}</div>
+        {statCards.map((s, i) => (
+          <div key={s.label} className={`card-premium p-4 chart-animate chart-animate-delay-${i + 1}`}>
+            <s.icon className={`h-4 w-4 ${s.color} mb-2`} />
+            <div className="text-2xl font-bold tabular-nums count-up">{s.value}</div>
             <div className="text-xs text-muted-foreground mt-1">{s.label}</div>
           </div>
         ))}
@@ -185,14 +189,14 @@ export default function Dashboard() {
 
       <Link
         to="/log"
-        className="flex items-center justify-center gap-2 w-full rounded-xl bg-primary py-4 text-lg font-semibold text-primary-foreground transition-all hover:opacity-90"
+        className="flex items-center justify-center gap-2 w-full rounded-xl gradient-primary py-4 text-lg font-semibold text-primary-foreground transition-all hover:opacity-90 hover:shadow-lg hover:shadow-primary/20"
       >
         <PlusCircle className="h-5 w-5" />
         Log New Mistake
       </Link>
 
-      {/* Weekly Goals — 4 metrics */}
-      <div className="rounded-xl border border-border bg-card p-5">
+      {/* Weekly Goals */}
+      <div className="card-premium p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold flex items-center gap-2">
             <Target className="h-5 w-5 text-primary" />
@@ -216,7 +220,7 @@ export default function Dashboard() {
               <div key={key} className="space-y-1.5">
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium">{emoji} {label}</span>
-                  <span className="text-muted-foreground">
+                  <span className="text-muted-foreground tabular-nums">
                     {editingGoals ? (
                       <span className="flex items-center gap-1">
                         <input
@@ -253,13 +257,17 @@ export default function Dashboard() {
           <Link to="/history" className="text-sm text-primary hover:underline">View All</Link>
         </div>
         {recent.length === 0 ? (
-          <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
-            No mistakes logged yet. Start by logging your first one!
+          <div className="card-premium p-8 text-center">
+            <div className="text-3xl mb-3">📝</div>
+            <p className="text-muted-foreground">No mistakes logged yet. Start by logging your first one!</p>
+            <Link to="/log" className="inline-flex items-center gap-2 mt-4 rounded-lg gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground">
+              <PlusCircle className="h-4 w-4" /> Log First Mistake
+            </Link>
           </div>
         ) : (
           <div className="space-y-2">
             {recent.map((m) => (
-              <div key={m.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 card-hover">
+              <div key={m.id} className="flex items-center gap-3 card-premium p-4">
                 <span className={`rounded-md px-2 py-0.5 text-xs font-semibold ${getSubjectClass(m.subject)}`}>
                   {m.subject}
                 </span>
@@ -267,7 +275,7 @@ export default function Dashboard() {
                   <div className="font-medium truncate">{m.chapter}</div>
                   <div className="text-xs text-muted-foreground">{m.mistake_type}</div>
                 </div>
-                <div className="text-xs text-muted-foreground whitespace-nowrap">
+                <div className="text-xs text-muted-foreground whitespace-nowrap tabular-nums">
                   {new Date(m.created_at).toLocaleDateString()}
                 </div>
               </div>

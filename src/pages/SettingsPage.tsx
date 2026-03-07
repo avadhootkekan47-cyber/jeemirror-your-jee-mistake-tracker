@@ -1,21 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import UpgradeModal from '@/components/UpgradeModal';
 
 export default function SettingsPage() {
   const { user, profile, refreshProfile, signOut } = useAuth();
-  const [name, setName] = useState(profile?.name || '');
+  const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // Set name from profile when it loads
+  useEffect(() => {
+    if (profile?.name) {
+      setName(profile.name);
+    } else if (profile?.full_name) {
+      setName(profile.full_name);
+    }
+  }, [profile]);
+
   const saveName = async () => {
     if (!user) return;
     setSaving(true);
-    await supabase.from('profiles').update({ name }).eq('id', user.id);
+    await supabase.from('profiles').update({ name, full_name: name }).eq('id', user.id);
     await refreshProfile();
     setSaving(false);
     setSaved(true);
@@ -43,12 +52,16 @@ export default function SettingsPage() {
     ? Math.max(0, 7 - Math.floor((Date.now() - new Date(profile.trial_start_date).getTime()) / 86400000))
     : 0;
 
+  const planLabel = profile?.plan === 'premium'
+    ? `Premium (${profile?.plan_type === 'yearly' ? 'Yearly' : 'Monthly'})`
+    : profile?.plan === 'trial' ? 'Free Trial' : 'Expired';
+
   return (
     <div className="max-w-lg mx-auto space-y-8 animate-fade-in">
       <h1 className="text-2xl font-bold">Settings</h1>
 
       {/* Profile */}
-      <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+      <div className="card-premium p-5 space-y-4">
         <h2 className="font-semibold">Profile</h2>
         <div>
           <label className="text-sm font-medium">Name</label>
@@ -56,7 +69,7 @@ export default function SettingsPage() {
             <input value={name} onChange={(e) => setName(e.target.value)}
               className="flex-1 rounded-lg border border-border bg-secondary px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
             <button onClick={saveName} disabled={saving}
-              className="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-all hover:opacity-90 disabled:opacity-50">
+              className="rounded-lg gradient-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-all hover:opacity-90 disabled:opacity-50">
               {saved ? 'Saved!' : saving ? '...' : 'Save'}
             </button>
           </div>
@@ -69,30 +82,35 @@ export default function SettingsPage() {
       </div>
 
       {/* Subscription */}
-      <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+      <div className="card-premium p-5 space-y-4">
         <h2 className="font-semibold">Subscription</h2>
         <div className="flex items-center gap-3">
           <span className={`rounded-md px-3 py-1 text-xs font-semibold ${
-            profile?.plan === 'premium' ? 'bg-success/20 text-success' :
+            profile?.plan === 'premium' ? 'bg-accent/20 text-accent' :
             profile?.plan === 'expired' ? 'bg-destructive/20 text-destructive' :
             'bg-primary/20 text-primary'
           }`}>
-            {profile?.plan === 'trial' ? 'Free Trial' : profile?.plan === 'premium' ? 'Premium' : 'Expired'}
+            {planLabel}
           </span>
           {profile?.plan === 'trial' && (
             <span className="text-sm text-muted-foreground">{trialDaysLeft} days left</span>
           )}
+          {profile?.plan === 'premium' && profile?.premium_expiry && (
+            <span className="text-sm text-muted-foreground">
+              Expires: {new Date(profile.premium_expiry).toLocaleDateString()}
+            </span>
+          )}
         </div>
         {profile?.plan !== 'premium' && (
           <button onClick={() => setShowUpgrade(true)}
-            className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-all hover:opacity-90">
+            className="rounded-lg gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-all hover:opacity-90">
             Upgrade to Premium
           </button>
         )}
       </div>
 
       {/* Account */}
-      <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+      <div className="card-premium p-5 space-y-4">
         <h2 className="font-semibold">Account</h2>
         <button onClick={sendPasswordReset}
           className="rounded-lg border border-border px-5 py-2.5 text-sm font-medium transition-colors hover:bg-secondary">
@@ -110,8 +128,8 @@ export default function SettingsPage() {
 
       {/* Delete confirmation */}
       {showDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
-          <div className="w-full max-w-sm rounded-xl border border-border bg-card p-6 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center glass p-4">
+          <div className="w-full max-w-sm card-premium p-6 space-y-4">
             <h3 className="text-lg font-bold">Delete Account?</h3>
             <p className="text-sm text-muted-foreground">
               Are you sure? This will permanently delete all your mistakes and data.

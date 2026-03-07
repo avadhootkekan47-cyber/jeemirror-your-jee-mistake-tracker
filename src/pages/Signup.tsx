@@ -47,10 +47,11 @@ export default function Signup() {
         return;
       }
 
-      // Create profile using upsert to handle duplicates
+      // Create profile with name and full_name
       const { error: profileError } = await supabase.from('profiles').upsert({
         id: data.user.id,
         name,
+        full_name: name,
         email,
         plan: 'trial',
         trial_start_date: new Date().toISOString(),
@@ -58,8 +59,8 @@ export default function Signup() {
       if (profileError) {
         console.error('Profile insert error:', profileError);
       }
-      // Send admin notification (fire-and-forget)
-      notifySignup(email);
+      // Send admin notification with name
+      notifySignup(email, name, 'trial');
       navigate('/payment');
     } catch (err: any) {
       console.error('Signup error:', err);
@@ -73,10 +74,10 @@ export default function Signup() {
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
-          <h1 className="text-2xl font-bold"><span className="text-primary">JEE</span>Mirror</h1>
+          <h1 className="text-2xl font-bold"><span className="text-gradient">JEE</span>Mirror</h1>
           <p className="text-muted-foreground mt-2">Create your account</p>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="card-premium p-6 space-y-4">
           {error && <p className="text-sm text-destructive bg-destructive/10 rounded-lg p-3">{error}</p>}
           <div>
             <label className="text-sm font-medium">Full Name</label>
@@ -99,7 +100,7 @@ export default function Signup() {
               className="mt-1 w-full rounded-lg border border-border bg-secondary px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
           <button disabled={loading} type="submit"
-            className="w-full rounded-lg bg-primary py-3 font-semibold text-primary-foreground transition-all hover:opacity-90 disabled:opacity-50">
+            className="w-full rounded-lg gradient-primary py-3 font-semibold text-primary-foreground transition-all hover:opacity-90 disabled:opacity-50">
             {loading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>

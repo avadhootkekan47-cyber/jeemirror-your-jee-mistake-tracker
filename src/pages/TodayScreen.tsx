@@ -21,11 +21,26 @@ interface StudyTask {
   is_done: boolean;
 }
 
+const DAILY_QUOTES = [
+  "Success is not final, failure is not fatal: it is the courage to continue that counts.",
+  "The only way to do great work is to love what you do.",
+  "Believe you can and you're halfway there.",
+  "Don't watch the clock; do what it does. Keep going.",
+  "It always seems impossible until it's done.",
+  "Your limitation—it's only your imagination.",
+  "Hard work beats talent when talent doesn't work hard.",
+];
+
 export default function TodayScreen() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [reviewDue, setReviewDue] = useState<ReviewItem[]>([]);
   const [tasks, setTasks] = useState<StudyTask[]>([]);
   const [allCleared, setAllCleared] = useState(false);
+
+  const displayName = profile?.name || profile?.full_name || user?.email?.split('@')[0] || 'Student';
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const dailyQuote = DAILY_QUOTES[new Date().getDate() % DAILY_QUOTES.length];
 
   useEffect(() => {
     if (!user) return;
@@ -34,8 +49,6 @@ export default function TodayScreen() {
 
   const fetchData = async () => {
     if (!user) return;
-
-    // Fetch unreviewed mistakes due for SRS review (oldest first, limit 5)
     const { data: srs } = await supabase
       .from('mistakes')
       .select('id, subject, chapter, mistake_type, notes, created_at')
@@ -45,7 +58,6 @@ export default function TodayScreen() {
       .limit(5);
     setReviewDue(srs || []);
 
-    // Fetch today's tasks
     const today = new Date().toISOString().split('T')[0];
     const { data: taskData } = await supabase
       .from('study_tasks')
@@ -83,34 +95,74 @@ export default function TodayScreen() {
   };
 
   const totalItems = reviewDue.length + tasks.filter(t => !t.is_done).length;
+  const totalAll = reviewDue.length + tasks.length;
+  const completedItems = totalAll - totalItems;
+  const progressPct = totalAll > 0 ? Math.round((completedItems / totalAll) * 100) : 0;
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Greeting */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gradient">Today</h1>
+          <h1 className="text-2xl font-bold">
+            {greeting}, <span className="text-gradient">{displayName}</span> 🔥
+          </h1>
           <p className="text-sm text-muted-foreground mt-1">
             {totalItems > 0 ? `${totalItems} items remaining` : 'All caught up! 🎉'}
           </p>
         </div>
         {allCleared && (
-          <div className="confetti-burst flex items-center gap-2 rounded-full gradient-primary px-4 py-2 text-sm font-semibold">
+          <div className="confetti-burst flex items-center gap-2 rounded-full gradient-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
             <PartyPopper className="h-4 w-4" />
             All Clear!
           </div>
         )}
       </div>
 
+      {/* Progress Ring */}
+      {totalAll > 0 && (
+        <div className="card-premium p-5 flex items-center gap-5">
+          <div className="relative h-20 w-20 flex-shrink-0">
+            <svg className="h-20 w-20 -rotate-90" viewBox="0 0 80 80">
+              <circle cx="40" cy="40" r="34" fill="none" stroke="hsl(240, 15%, 12%)" strokeWidth="6" />
+              <circle
+                cx="40" cy="40" r="34" fill="none"
+                stroke="url(#progressGrad)"
+                strokeWidth="6"
+                strokeLinecap="round"
+                strokeDasharray={`${2 * Math.PI * 34}`}
+                strokeDashoffset={`${2 * Math.PI * 34 * (1 - progressPct / 100)}`}
+                className="transition-all duration-700"
+              />
+              <defs>
+                <linearGradient id="progressGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="hsl(253, 63%, 55%)" />
+                  <stop offset="100%" stopColor="hsl(160, 84%, 39%)" />
+                </linearGradient>
+              </defs>
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-lg font-bold tabular-nums">{progressPct}%</span>
+            </div>
+          </div>
+          <div>
+            <p className="font-semibold">Today's Progress</p>
+            <p className="text-sm text-muted-foreground">{completedItems} of {totalAll} tasks completed</p>
+          </div>
+        </div>
+      )}
+
       {/* Study Tasks */}
-      <div className="rounded-xl border border-border bg-card p-5 card-glow">
+      <div className="card-premium p-5">
         <div className="flex items-center gap-2 mb-4">
           <Zap className="h-5 w-5 text-accent" />
           <h2 className="font-semibold">Today's Priorities</h2>
         </div>
         {tasks.length === 0 ? (
-          <div className="text-sm text-muted-foreground">
-            No tasks for today.{' '}
-            <Link to="/planner" className="text-primary hover:underline">Set up your planner →</Link>
+          <div className="text-center py-6">
+            <div className="text-3xl mb-2">📋</div>
+            <p className="text-sm text-muted-foreground mb-3">No tasks for today.</p>
+            <Link to="/planner" className="text-sm text-primary hover:underline">Set up your planner →</Link>
           </div>
         ) : (
           <div className="space-y-2">
@@ -119,10 +171,10 @@ export default function TodayScreen() {
                 <button
                   onClick={() => !t.is_done && markTaskDone(t.id)}
                   className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                    t.is_done ? 'border-success bg-success' : 'border-muted-foreground hover:border-primary'
+                    t.is_done ? 'border-accent bg-accent' : 'border-muted-foreground hover:border-primary'
                   }`}
                 >
-                  {t.is_done && <CheckCircle2 className="h-3 w-3 text-background" />}
+                  {t.is_done && <CheckCircle2 className="h-3 w-3 text-accent-foreground" />}
                 </button>
                 <span className={`rounded-md px-2 py-0.5 text-[10px] font-semibold ${getSubjectClass(t.subject)}`}>
                   {t.subject}
@@ -135,17 +187,18 @@ export default function TodayScreen() {
       </div>
 
       {/* SRS Review */}
-      <div className="rounded-xl border border-border bg-card p-5 card-glow">
+      <div className="card-premium p-5">
         <div className="flex items-center gap-2 mb-4">
           <BookOpen className="h-5 w-5 text-primary" />
           <h2 className="font-semibold">Review Due</h2>
-          <span className="text-xs rounded-full bg-primary/20 text-primary px-2 py-0.5 font-medium ml-auto">
+          <span className="text-xs rounded-full bg-primary/15 text-primary px-2 py-0.5 font-medium ml-auto tabular-nums">
             {reviewDue.length} pending
           </span>
         </div>
         {reviewDue.length === 0 ? (
-          <div className="text-sm text-muted-foreground text-center py-4">
-            No reviews due! You're all caught up. 🔥
+          <div className="text-center py-6">
+            <div className="text-3xl mb-2">🔥</div>
+            <p className="text-sm text-muted-foreground">No reviews due! You're all caught up.</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -160,7 +213,7 @@ export default function TodayScreen() {
                 </div>
                 <button
                   onClick={() => markReviewed(r.id)}
-                  className="rounded-lg bg-success/20 text-success hover:bg-success/30 px-3 py-1.5 text-xs font-medium transition-colors"
+                  className="rounded-lg bg-accent/15 text-accent hover:bg-accent/25 px-3 py-1.5 text-xs font-medium transition-colors"
                 >
                   Got it ✓
                 </button>
@@ -172,14 +225,19 @@ export default function TodayScreen() {
 
       {/* Quick links */}
       <div className="grid grid-cols-2 gap-3">
-        <Link to="/log" className="rounded-xl border border-border bg-card p-4 card-glow text-center">
+        <Link to="/log" className="card-premium p-4 text-center">
           <div className="text-lg mb-1">✏️</div>
           <div className="text-sm font-medium">Log Mistake</div>
         </Link>
-        <Link to="/review" className="rounded-xl border border-border bg-card p-4 card-glow text-center">
-          <div className="text-lg mb-1">🃏</div>
-          <div className="text-sm font-medium">Review Deck</div>
+        <Link to="/revision" className="card-premium p-4 text-center">
+          <div className="text-lg mb-1">📖</div>
+          <div className="text-sm font-medium">Chapter Revision</div>
         </Link>
+      </div>
+
+      {/* Daily Quote */}
+      <div className="card-premium p-4 text-center">
+        <p className="text-sm text-muted-foreground italic">"{dailyQuote}"</p>
       </div>
     </div>
   );
