@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { Check, LogOut } from 'lucide-react';
+import { Check, LogOut, Crown } from 'lucide-react';
 
 export default function PaymentPage() {
   const { user, profile, signOut } = useAuth();
@@ -22,6 +22,10 @@ export default function PaymentPage() {
   const handleSubmit = async () => {
     if (!utr.trim() || !user) return;
     setSubmitting(true);
+
+    // Save plan_type to profile
+    await supabase.from('profiles').update({ plan_type: selectedPlan }).eq('id', user.id);
+
     const { error } = await supabase.from('payment_requests').insert({
       user_id: user.id,
       user_email: profile?.email || user.email,
@@ -44,12 +48,12 @@ export default function PaymentPage() {
       <div className="w-full max-w-lg space-y-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold">
-            <span className="text-primary">JEE</span>Mirror
+            <span className="text-gradient">JEE</span>Mirror
           </h1>
           <p className="text-muted-foreground mt-1">Activate your account to get started</p>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-6 shadow-lg">
+        <div className="card-premium p-6 shadow-lg">
           {step === 'plan' && (
             <div className="space-y-6">
               <div className="text-center">
@@ -61,26 +65,27 @@ export default function PaymentPage() {
                   <button
                     key={plan}
                     onClick={() => setSelectedPlan(plan)}
-                    className={`relative rounded-lg border-2 p-4 text-left transition-all ${
+                    className={`relative rounded-xl border-2 p-5 text-left transition-all ${
                       selectedPlan === plan
-                        ? 'border-primary bg-primary/5'
+                        ? 'border-primary bg-primary/5 shadow-lg'
                         : 'border-border hover:border-muted-foreground'
                     }`}
                   >
                     {plan === 'yearly' && (
-                      <span className="absolute -top-2.5 right-2 rounded-full bg-success px-2 py-0.5 text-xs font-semibold text-background">
+                      <span className="absolute -top-2.5 right-2 rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-accent-foreground">
                         Save 41%
                       </span>
                     )}
+                    <Crown className={`h-5 w-5 mb-2 ${selectedPlan === plan ? 'text-primary' : 'text-muted-foreground'}`} />
                     <div className="font-semibold capitalize">{plan}</div>
-                    <div className="text-2xl font-bold mt-1">₹{plan === 'monthly' ? 50 : 350}</div>
+                    <div className="text-2xl font-bold mt-1 tabular-nums">₹{plan === 'monthly' ? 50 : 350}</div>
                     <div className="text-xs text-muted-foreground">per {plan === 'monthly' ? 'month' : 'year'}</div>
                   </button>
                 ))}
               </div>
               <button
                 onClick={() => setStep('payment')}
-                className="w-full rounded-lg bg-primary py-3 font-semibold text-primary-foreground transition-all hover:opacity-90"
+                className="w-full rounded-lg gradient-primary py-3 font-semibold text-primary-foreground transition-all hover:opacity-90"
               >
                 Proceed to Pay
               </button>
@@ -113,12 +118,12 @@ export default function PaymentPage() {
                   </div>
                 </div>
                 <div className="flex items-center justify-center gap-2">
-                  <span className="text-lg font-bold">9370939333@ybl</span>
+                  <span className="text-lg font-bold font-mono">9370939333@ybl</span>
                   <button onClick={copyUPI} className="rounded bg-secondary px-3 py-1 text-xs font-medium transition-colors hover:bg-muted">
                     {copied ? 'Copied!' : 'Copy'}
                   </button>
                 </div>
-                <div className="text-2xl font-bold text-primary text-center">₹{amount}</div>
+                <div className="text-2xl font-bold text-primary text-center tabular-nums">₹{amount}</div>
                 <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
                   <li>Open PhonePe, Google Pay, or any UPI app</li>
                   <li>Send exactly ₹{amount} to the UPI ID above</li>
@@ -150,7 +155,7 @@ export default function PaymentPage() {
                 <button
                   onClick={handleSubmit}
                   disabled={!utr.trim() || submitting}
-                  className="flex-1 rounded-lg bg-primary py-3 font-semibold text-primary-foreground transition-all hover:opacity-90 disabled:opacity-50"
+                  className="flex-1 rounded-lg gradient-primary py-3 font-semibold text-primary-foreground transition-all hover:opacity-90 disabled:opacity-50"
                 >
                   {submitting ? 'Submitting...' : 'Submit Payment'}
                 </button>
@@ -160,8 +165,8 @@ export default function PaymentPage() {
 
           {step === 'success' && (
             <div className="space-y-4 text-center py-4">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success/20">
-                <Check className="h-8 w-8 text-success" />
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-accent/20">
+                <Check className="h-8 w-8 text-accent" />
               </div>
               <h2 className="text-xl font-bold">Payment Under Review</h2>
               <p className="text-sm text-muted-foreground">
