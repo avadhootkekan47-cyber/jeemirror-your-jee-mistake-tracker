@@ -1,29 +1,30 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { SUBJECTS, CHAPTERS, CHEMISTRY_GROUPS, REVISION_STATUSES, type RevisionStatus } from '@/lib/constants';
-import { ChevronDown, ChevronRight, BookOpen } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
+import { SUBJECTS, CHAPTERS, REVISION_STATUSES, type RevisionStatus } from '@/lib/constants';
+import { BookOpen, Check } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 
-interface ChapterStatus {
-  chapter: string;
-  subject: string;
-  status: RevisionStatus;
-}
-
-const STATUS_COLORS: Record<RevisionStatus, string> = {
-  'Not Started': 'bg-muted text-muted-foreground',
-  'In Progress': 'bg-accent/20 text-accent border border-accent/30',
-  'Revised Once': 'bg-primary/20 text-primary border border-primary/30',
-  'Fully Revised': 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30',
+const STATUS_META: Record<RevisionStatus, { label: string; classes: string; glow: string }> = {
+  'Not Started': { label: 'Not Started', classes: 'bg-muted text-muted-foreground', glow: '' },
+  'In Progress': { label: 'In Progress', classes: 'bg-blue-500/20 text-blue-400 border border-blue-500/30', glow: 'shadow-[0_0_15px_rgba(59,130,246,0.2)]' },
+  'Revised Once': { label: 'Revised Once', classes: 'bg-amber-500/20 text-amber-400 border border-amber-500/30', glow: 'shadow-[0_0_15px_rgba(245,158,11,0.2)]' },
+  'Fully Revised': { label: 'Fully Revised', classes: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30', glow: 'shadow-[0_0_15px_rgba(16,185,129,0.25)]' },
 };
+
+const SUBJECT_ICONS: Record<string, string> = { Physics: '⚛️', Chemistry: '🧪', Mathematics: '📐' };
+const SUBJECT_COLORS: Record<string, string> = {
+  Physics: 'data-[state=active]:border-blue-500 data-[state=active]:text-blue-400',
+  Chemistry: 'data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-400',
+  Mathematics: 'data-[state=active]:border-orange-500 data-[state=active]:text-orange-400',
+};
+const RING_COLORS: Record<string, string> = { Physics: '#3B82F6', Chemistry: '#10B981', Mathematics: '#F97316' };
 
 export default function RevisionPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [statuses, setStatuses] = useState<Record<string, RevisionStatus>>({});
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({ Physics: true });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -34,16 +35,20 @@ export default function RevisionPage() {
         .select('chapter, subject, status')
         .eq('user_id', user.id);
       const map: Record<string, RevisionStatus> = {};
-      data?.forEach((d: ChapterStatus) => { map[`${d.subject}::${d.chapter}`] = d.status as RevisionStatus; });
+      data?.forEach((d: any) => { map[`${d.subject}::${d.chapter}`] = d.status as RevisionStatus; });
       setStatuses(map);
       setLoading(false);
     })();
   }, [user]);
 
-  const updateStatus = async (subject: string, chapter: string, status: RevisionStatus) => {
+  const cycleStatus = useCallback(async (subject: string, chapter: string) => {
     if (!user) return;
     const key = `${subject}::${chapter}`;
-    setStatuses(prev => ({ ...prev, [key]: status }));
+    const current = statuses[key] || 'Not Started';
+    const idx = REVISION_STATUSES.indexOf(current);
+    const next = REVISION_STATUSES[(idx + 1) % REVISION_STATUSES.length];
+
+    setStatuses(prev => ({ ...prev, [key]: next }));
 
     const { error } = await supabase
       .from('chapter_revision')
@@ -51,53 +56,50 @@ export default function RevisionPage() {
         user_id: user.id,
         subject,
         chapter,
-        status,
+        status: next,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,subject,chapter' });
 
     if (error) {
+      setStatuses(prev => ({ ...prev, [key]: current }));
       toast({ title: 'Error', description: 'Could not save status', variant: 'destructive' });
     }
-  };
+  }, [user, statuses, toast]);
 
-  const getSubjectProgress = (subject: string) => {
+  const getProgress = (subject: string) => {
     const chapters = CHAPTERS[subject] || [];
-    const fullyRevised = chapters.filter(c => statuses[`${subject}::${c}`] === 'Fully Revised').length;
-    return chapters.length > 0 ? Math.round((fullyRevised / chapters.length) * 100) : 0;
+    const done = chapters.filter(c => statuses[`${subject}::${c}`] === 'Fully Revised').length;
+    return chapters.length > 0 ? Math.round((done / chapters.length) * 100) : 0;
   };
 
-  const toggleExpand = (key: string) => {
-    setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const renderChapterList = (subject: string, chapters: string[], groupLabel?: string) => (
-    <div key={groupLabel || subject} className="space-y-1">
-      {groupLabel && (
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 pt-2">{groupLabel}</p>
-      )}
-      {chapters.map(chapter => {
-        const key = `${subject}::${chapter}`;
-        const current = statuses[key] || 'Not Started';
-        return (
-          <div key={chapter} className="flex items-center justify-between rounded-lg border border-border bg-card/50 px-3 py-2.5 gap-2">
-            <span className="text-sm font-medium truncate flex-1">{chapter}</span>
-            <select
-              value={current}
-              onChange={(e) => updateStatus(subject, chapter, e.target.value as RevisionStatus)}
-              className={`rounded-md px-2 py-1 text-xs font-semibold cursor-pointer appearance-none ${STATUS_COLORS[current]}`}
-              style={{ minWidth: 120 }}
-            >
-              {REVISION_STATUSES.map(s => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
+  const ProgressRing = ({ subject }: { subject: string }) => {
+    const pct = getProgress(subject);
+    const r = 38;
+    const circ = 2 * Math.PI * r;
+    const color = RING_COLORS[subject];
+    return (
+      <div className="flex flex-col items-center gap-2">
+        <div className="relative h-20 w-20">
+          <svg className="h-20 w-20 -rotate-90" viewBox="0 0 88 88">
+            <circle cx="44" cy="44" r={r} fill="none" stroke="hsl(var(--muted))" strokeWidth="5" />
+            <circle cx="44" cy="44" r={r} fill="none" stroke={color} strokeWidth="5"
+              strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={circ * (1 - pct / 100)}
+              className="transition-all duration-700" />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-lg font-bold tabular-nums">{pct}%</span>
           </div>
-        );
-      })}
+        </div>
+        <span className="text-xs font-medium text-muted-foreground">{SUBJECT_ICONS[subject]} {subject}</span>
+      </div>
+    );
+  };
+
+  if (loading) return (
+    <div className="space-y-4 p-6">
+      {[1, 2, 3].map(i => <div key={i} className="h-24 rounded-xl shimmer" />)}
     </div>
   );
-
-  if (loading) return <div className="text-center text-muted-foreground py-12">Loading…</div>;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -106,39 +108,47 @@ export default function RevisionPage() {
         <h1 className="text-2xl font-bold">Chapter Revision</h1>
       </div>
 
-      {SUBJECTS.map(subject => {
-        const progress = getSubjectProgress(subject);
-        const isOpen = expanded[subject];
-        return (
-          <div key={subject} className="rounded-xl border border-border bg-card overflow-hidden">
-            <button
-              onClick={() => toggleExpand(subject)}
-              className="flex items-center justify-between w-full px-4 py-3 hover:bg-secondary/50 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                {isOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
-                <span className="font-semibold text-lg">{subject}</span>
-                <span className="text-xs text-muted-foreground">({CHAPTERS[subject].length} chapters)</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-primary">{progress}%</span>
-                <Progress value={progress} className="h-2 w-24" />
-              </div>
-            </button>
-            {isOpen && (
-              <div className="px-3 pb-3 space-y-1">
-                {subject === 'Chemistry' ? (
-                  Object.entries(CHEMISTRY_GROUPS).map(([group, chapters]) =>
-                    renderChapterList(subject, chapters, group)
-                  )
-                ) : (
-                  renderChapterList(subject, CHAPTERS[subject])
-                )}
-              </div>
-            )}
-          </div>
-        );
-      })}
+      {/* Progress Rings */}
+      <div className="card-premium p-5 flex justify-around">
+        {SUBJECTS.map(s => <ProgressRing key={s} subject={s} />)}
+      </div>
+
+      {/* Subject Tabs */}
+      <Tabs defaultValue="Physics" className="w-full">
+        <TabsList className="w-full bg-secondary/50 border border-border h-12">
+          {SUBJECTS.map(s => (
+            <TabsTrigger key={s} value={s}
+              className={`flex-1 text-sm font-semibold border-b-2 border-transparent transition-all ${SUBJECT_COLORS[s]}`}>
+              {SUBJECT_ICONS[s]} {s}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        {SUBJECTS.map(subject => (
+          <TabsContent key={subject} value={subject}>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3">
+              {CHAPTERS[subject].map(chapter => {
+                const key = `${subject}::${chapter}`;
+                const status = statuses[key] || 'Not Started';
+                const meta = STATUS_META[status];
+                const isFullyRevised = status === 'Fully Revised';
+                return (
+                  <button key={chapter} onClick={() => cycleStatus(subject, chapter)}
+                    className={`relative rounded-xl border border-border bg-card p-4 text-left transition-all duration-300 hover:border-primary/40 hover:-translate-y-0.5 active:scale-[0.98] ${meta.glow} ${isFullyRevised ? 'shimmer-border' : ''}`}>
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <span className="text-sm font-medium leading-tight">{chapter}</span>
+                      {isFullyRevised && <Check className="h-4 w-4 text-emerald-400 flex-shrink-0" />}
+                    </div>
+                    <span className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${meta.classes}`}>
+                      {meta.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </TabsContent>
+        ))}
+      </Tabs>
     </div>
   );
 }

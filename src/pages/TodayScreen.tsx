@@ -31,6 +31,43 @@ const DAILY_QUOTES = [
   "Hard work beats talent when talent doesn't work hard.",
 ];
 
+function getISTDate() {
+  return new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+}
+
+function getGreeting(hour: number) {
+  if (hour >= 5 && hour < 12) return 'Good Morning ☀️';
+  if (hour >= 12 && hour < 17) return 'Good Afternoon 🌤️';
+  if (hour >= 17 && hour < 21) return 'Good Evening 🌆';
+  return 'Good Night 🌙';
+}
+
+function ISTClock() {
+  const [time, setTime] = useState(() =>
+    new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true })
+  );
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setTime(new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true }));
+    }, 10000);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <div className="relative flex items-center justify-center">
+      {/* Pulsing ring */}
+      <div className="absolute h-28 w-28 rounded-full border-2 border-primary/30 animate-[pulse_3s_ease-in-out_infinite]" />
+      <div className="absolute h-32 w-32 rounded-full border border-primary/15 animate-[pulse_3s_ease-in-out_infinite_0.5s]" />
+      {/* Clock face */}
+      <div className="relative z-10 flex items-center justify-center h-24 w-24 rounded-full bg-card border border-primary/20"
+        style={{ boxShadow: '0 0 40px rgba(124,58,237,0.25), inset 0 0 20px rgba(124,58,237,0.08)' }}>
+        <span className="text-xl font-bold tabular-nums text-foreground tracking-wide">{time}</span>
+      </div>
+    </div>
+  );
+}
+
 export default function TodayScreen() {
   const { user, profile } = useAuth();
   const [reviewDue, setReviewDue] = useState<ReviewItem[]>([]);
@@ -38,9 +75,9 @@ export default function TodayScreen() {
   const [allCleared, setAllCleared] = useState(false);
 
   const displayName = profile?.name || profile?.full_name || user?.email?.split('@')[0] || 'Student';
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  const dailyQuote = DAILY_QUOTES[new Date().getDate() % DAILY_QUOTES.length];
+  const istDate = getISTDate();
+  const greeting = getGreeting(istDate.getHours());
+  const dailyQuote = DAILY_QUOTES[istDate.getDate() % DAILY_QUOTES.length];
 
   useEffect(() => {
     if (!user) return;
@@ -101,22 +138,24 @@ export default function TodayScreen() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Greeting */}
-      <div className="flex items-center justify-between">
-        <div>
+      {/* Greeting + Clock */}
+      <div className="card-premium p-5 flex items-center justify-between gap-4">
+        <div className="flex-1">
           <h1 className="text-2xl font-bold">
-            {greeting}, <span className="text-gradient">{displayName}</span> 🔥
+            {greeting.split(' ').slice(0, 2).join(' ')},{' '}
+            <span className="text-gradient">{displayName}</span>{' '}
+            {greeting.split(' ').pop()}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             {totalItems > 0 ? `${totalItems} items remaining` : 'All caught up! 🎉'}
           </p>
+          {allCleared && (
+            <div className="mt-2 inline-flex items-center gap-2 rounded-full gradient-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground confetti-burst">
+              <PartyPopper className="h-3.5 w-3.5" /> All Clear!
+            </div>
+          )}
         </div>
-        {allCleared && (
-          <div className="confetti-burst flex items-center gap-2 rounded-full gradient-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
-            <PartyPopper className="h-4 w-4" />
-            All Clear!
-          </div>
-        )}
+        <ISTClock />
       </div>
 
       {/* Progress Ring */}
@@ -124,16 +163,11 @@ export default function TodayScreen() {
         <div className="card-premium p-5 flex items-center gap-5">
           <div className="relative h-20 w-20 flex-shrink-0">
             <svg className="h-20 w-20 -rotate-90" viewBox="0 0 80 80">
-              <circle cx="40" cy="40" r="34" fill="none" stroke="hsl(240, 15%, 12%)" strokeWidth="6" />
-              <circle
-                cx="40" cy="40" r="34" fill="none"
-                stroke="url(#progressGrad)"
-                strokeWidth="6"
-                strokeLinecap="round"
-                strokeDasharray={`${2 * Math.PI * 34}`}
+              <circle cx="40" cy="40" r="34" fill="none" stroke="hsl(var(--muted))" strokeWidth="6" />
+              <circle cx="40" cy="40" r="34" fill="none" stroke="url(#progressGrad)" strokeWidth="6"
+                strokeLinecap="round" strokeDasharray={`${2 * Math.PI * 34}`}
                 strokeDashoffset={`${2 * Math.PI * 34 * (1 - progressPct / 100)}`}
-                className="transition-all duration-700"
-              />
+                className="transition-all duration-700" />
               <defs>
                 <linearGradient id="progressGrad" x1="0" y1="0" x2="1" y2="1">
                   <stop offset="0%" stopColor="hsl(253, 63%, 55%)" />
@@ -168,17 +202,11 @@ export default function TodayScreen() {
           <div className="space-y-2">
             {tasks.map(t => (
               <div key={t.id} className={`flex items-center gap-3 rounded-lg border border-border p-3 transition-all ${t.is_done ? 'opacity-50' : ''}`}>
-                <button
-                  onClick={() => !t.is_done && markTaskDone(t.id)}
-                  className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                    t.is_done ? 'border-accent bg-accent' : 'border-muted-foreground hover:border-primary'
-                  }`}
-                >
+                <button onClick={() => !t.is_done && markTaskDone(t.id)}
+                  className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors ${t.is_done ? 'border-accent bg-accent' : 'border-muted-foreground hover:border-primary'}`}>
                   {t.is_done && <CheckCircle2 className="h-3 w-3 text-accent-foreground" />}
                 </button>
-                <span className={`rounded-md px-2 py-0.5 text-[10px] font-semibold ${getSubjectClass(t.subject)}`}>
-                  {t.subject}
-                </span>
+                <span className={`rounded-md px-2 py-0.5 text-[10px] font-semibold ${getSubjectClass(t.subject)}`}>{t.subject}</span>
                 <span className={`text-sm flex-1 ${t.is_done ? 'line-through text-muted-foreground' : ''}`}>{t.topic}</span>
               </div>
             ))}
@@ -191,9 +219,7 @@ export default function TodayScreen() {
         <div className="flex items-center gap-2 mb-4">
           <BookOpen className="h-5 w-5 text-primary" />
           <h2 className="font-semibold">Review Due</h2>
-          <span className="text-xs rounded-full bg-primary/15 text-primary px-2 py-0.5 font-medium ml-auto tabular-nums">
-            {reviewDue.length} pending
-          </span>
+          <span className="text-xs rounded-full bg-primary/15 text-primary px-2 py-0.5 font-medium ml-auto tabular-nums">{reviewDue.length} pending</span>
         </div>
         {reviewDue.length === 0 ? (
           <div className="text-center py-6">
@@ -204,17 +230,13 @@ export default function TodayScreen() {
           <div className="space-y-2">
             {reviewDue.map(r => (
               <div key={r.id} className="flex items-center gap-3 rounded-lg border border-border p-3">
-                <span className={`rounded-md px-2 py-0.5 text-[10px] font-semibold ${getSubjectClass(r.subject)}`}>
-                  {r.subject}
-                </span>
+                <span className={`rounded-md px-2 py-0.5 text-[10px] font-semibold ${getSubjectClass(r.subject)}`}>{r.subject}</span>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium truncate">{r.chapter}</div>
                   <div className="text-xs text-muted-foreground">{r.mistake_type}</div>
                 </div>
-                <button
-                  onClick={() => markReviewed(r.id)}
-                  className="rounded-lg bg-accent/15 text-accent hover:bg-accent/25 px-3 py-1.5 text-xs font-medium transition-colors"
-                >
+                <button onClick={() => markReviewed(r.id)}
+                  className="rounded-lg bg-accent/15 text-accent hover:bg-accent/25 px-3 py-1.5 text-xs font-medium transition-colors">
                   Got it ✓
                 </button>
               </div>

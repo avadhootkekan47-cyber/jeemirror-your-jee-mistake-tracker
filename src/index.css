@@ -181,3 +181,13 @@
 .count-up {
   animation: count-up 0.5s ease-out forwards;
 }
+
+/* Shimmer border for fully revised cards */
+@keyframes shimmer-border {
+  0% { border-color: hsl(160 84% 39% / 0.3); }
+  50% { border-color: hsl(160 84% 39% / 0.6); }
+  100% { border-color: hsl(160 84% 39% / 0.3); }
+}
+.shimmer-border {
+  animation: shimmer-border 2s ease-in-out infinite;
+}
