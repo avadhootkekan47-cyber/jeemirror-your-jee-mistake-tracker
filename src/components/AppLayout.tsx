@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { LayoutDashboard, PlusCircle, History, BarChart3, Settings, LogOut, BookOpen, CalendarCheck, Sparkles, ClipboardCheck, MoreHorizontal, Crown } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, History, BarChart3, Settings, LogOut, BookOpen, CalendarCheck, Sparkles, ClipboardCheck, MoreHorizontal } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import FloatingActionButton from '@/components/FloatingActionButton';
 
 const navItems = [
   { to: '/today', icon: Sparkles, label: 'Today' },
@@ -42,16 +43,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <span className="text-gradient">JEE</span>Mirror
           </h1>
         </div>
-        <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
+        <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto" aria-label="Main navigation">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
+              aria-label={item.label}
               className={({ isActive }) =>
-                `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
+                `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all touch-target ${
                   isActive
-                    ? 'bg-sidebar-accent text-primary border-l-2 border-primary'
-                    : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
+                    ? 'bg-sidebar-accent text-foreground border-l-2 border-primary'
+                    : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-foreground'
                 }`
               }
             >
@@ -66,13 +68,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               {initials}
             </div>
             <div className="flex-1 min-w-0">
-              <span className="text-sm font-medium truncate block">{displayName}</span>
-              <span className={`text-[10px] font-semibold rounded-md px-1.5 py-0.5 ${planColor}`}>{planBadge}</span>
+              <span className="text-sm font-medium truncate block text-foreground">{displayName}</span>
+              <span className={`text-xs font-semibold rounded-md px-1.5 py-0.5 ${planColor}`}>{planBadge}</span>
             </div>
           </div>
           <button
             onClick={signOut}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            aria-label="Logout"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground touch-target"
           >
             <LogOut className="h-4 w-4" />
             Logout
@@ -82,34 +85,39 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Main content */}
       <div className="flex-1 md:ml-[260px] flex flex-col min-h-screen">
-        <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6">{children}</main>
+        <main className="flex-1 p-4 md:p-6 pb-24 md:pb-6">{children}</main>
       </div>
 
+      {/* Mobile FAB */}
+      <FloatingActionButton />
+
       {/* Mobile bottom nav - glassmorphism */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex border-t border-border glass">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex border-t border-border glass" aria-label="Mobile navigation">
         {mobileBottomItems.map((item) => {
           const isActive = location.pathname === item.to;
           return (
             <NavLink
               key={item.to}
               to={item.to}
-              className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[10px] transition-colors min-h-[48px] justify-center ${
+              aria-label={item.label}
+              className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs transition-colors touch-target justify-center ${
                 isActive ? 'text-primary drop-shadow-[0_0_6px_hsl(253,63%,55%,0.5)]' : 'text-muted-foreground'
               }`}
             >
               <item.icon className="h-5 w-5" />
-              {item.label.split(' ')[0]}
+              <span className="truncate">{item.label.split(' ')[0]}</span>
             </NavLink>
           );
         })}
         <button
           onClick={() => setMoreOpen(true)}
-          className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[10px] transition-colors min-h-[48px] justify-center ${
+          aria-label="More navigation options"
+          className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs transition-colors touch-target justify-center ${
             moreItems.some(i => location.pathname === i.to) ? 'text-primary' : 'text-muted-foreground'
           }`}
         >
           <MoreHorizontal className="h-5 w-5" />
-          More
+          <span>More</span>
         </button>
       </nav>
 
@@ -127,8 +135,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   key={item.to}
                   to={item.to}
                   onClick={() => setMoreOpen(false)}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors min-h-[48px] ${
-                    isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-secondary'
+                  aria-label={item.label}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors touch-target ${
+                    isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
                   }`}
                 >
                   <item.icon className="h-5 w-5" />
@@ -138,7 +147,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             })}
             <button
               onClick={() => { signOut(); setMoreOpen(false); }}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm text-muted-foreground transition-colors hover:bg-secondary min-h-[48px]"
+              aria-label="Logout"
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground touch-target"
             >
               <LogOut className="h-5 w-5" />
               Logout

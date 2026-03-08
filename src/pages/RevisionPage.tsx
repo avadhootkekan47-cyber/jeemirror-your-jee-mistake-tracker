@@ -5,6 +5,7 @@ import { SUBJECTS, CHAPTERS, REVISION_STATUSES, type RevisionStatus } from '@/li
 import { BookOpen, Check } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import EmptyState from '@/components/EmptyState';
 
 const STATUS_META: Record<RevisionStatus, { label: string; classes: string; glow: string }> = {
   'Not Started': { label: 'Not Started', classes: 'bg-muted text-muted-foreground', glow: '' },
@@ -41,6 +42,8 @@ export default function RevisionPage() {
     })();
   }, [user]);
 
+  const hasAnyStatus = Object.values(statuses).some(s => s !== 'Not Started');
+
   const cycleStatus = useCallback(async (subject: string, chapter: string) => {
     if (!user) return;
     const key = `${subject}::${chapter}`;
@@ -63,6 +66,26 @@ export default function RevisionPage() {
     if (error) {
       setStatuses(prev => ({ ...prev, [key]: current }));
       toast({ title: 'Error', description: 'Could not save status', variant: 'destructive' });
+    } else {
+      const statusEmoji = next === 'Fully Revised' ? '✅' : next === 'Revised Once' ? '🔁' : next === 'In Progress' ? '📖' : '⏸️';
+      toast({
+        title: `Chapter marked as ${next} ${statusEmoji}`,
+        description: `${chapter}`,
+        action: (
+          <button
+            className="rounded-lg border border-border bg-secondary px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+            onClick={async () => {
+              setStatuses(prev => ({ ...prev, [key]: current }));
+              await supabase.from('chapter_revision').upsert({
+                user_id: user.id, subject, chapter, status: current,
+                updated_at: new Date().toISOString(),
+              }, { onConflict: 'user_id,subject,chapter' });
+            }}
+          >
+            Undo
+          </button>
+        ),
+      });
     }
   }, [user, statuses, toast]);
 
@@ -79,7 +102,7 @@ export default function RevisionPage() {
     const color = RING_COLORS[subject];
     return (
       <div className="flex flex-col items-center gap-2">
-        <div className="relative h-20 w-20">
+        <div className="relative h-20 w-20" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={`${subject} revision progress`}>
           <svg className="h-20 w-20 -rotate-90" viewBox="0 0 88 88">
             <circle cx="44" cy="44" r={r} fill="none" stroke="hsl(var(--muted))" strokeWidth="5" />
             <circle cx="44" cy="44" r={r} fill="none" stroke={color} strokeWidth="5"
@@ -87,7 +110,7 @@ export default function RevisionPage() {
               className="transition-all duration-700" />
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-lg font-bold tabular-nums">{pct}%</span>
+            <span className="text-lg font-bold tabular-nums text-foreground">{pct}%</span>
           </div>
         </div>
         <span className="text-xs font-medium text-muted-foreground">{SUBJECT_ICONS[subject]} {subject}</span>
@@ -104,9 +127,18 @@ export default function RevisionPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center gap-3">
-        <BookOpen className="h-6 w-6 text-primary" />
-        <h1 className="text-2xl font-bold">Chapter Revision</h1>
+        <BookOpen className="h-6 w-6 text-primary" aria-hidden="true" />
+        <h1 className="text-2xl font-bold text-foreground">Chapter Revision</h1>
       </div>
+
+      {/* Empty state hint */}
+      {!hasAnyStatus && (
+        <EmptyState
+          icon="📖"
+          title="Track your chapter revision"
+          description="Tap any chapter card below to update its status as you study. Cycle through: Not Started → In Progress → Revised Once → Fully Revised."
+        />
+      )}
 
       {/* Progress Rings */}
       <div className="card-premium p-5 flex justify-around">
@@ -134,12 +166,15 @@ export default function RevisionPage() {
                 const isFullyRevised = status === 'Fully Revised';
                 return (
                   <button key={chapter} onClick={() => cycleStatus(subject, chapter)}
-                    className={`relative rounded-xl border border-border bg-card p-4 text-left transition-all duration-300 hover:border-primary/40 hover:-translate-y-0.5 active:scale-[0.98] ${meta.glow} ${isFullyRevised ? 'shimmer-border' : ''}`}>
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${chapter}: ${status}. Click to change status.`}
+                    className={`relative rounded-xl border border-border bg-card p-4 text-left transition-all duration-300 hover:border-primary/40 hover:-translate-y-0.5 active:scale-[0.98] touch-target ${meta.glow} ${isFullyRevised ? 'shimmer-border' : ''}`}>
                     <div className="flex items-start justify-between gap-2 mb-3">
-                      <span className="text-sm font-medium leading-tight">{chapter}</span>
-                      {isFullyRevised && <Check className="h-4 w-4 text-emerald-400 flex-shrink-0" />}
+                      <span className="text-sm font-medium leading-tight text-foreground">{chapter}</span>
+                      {isFullyRevised && <Check className="h-4 w-4 text-emerald-400 flex-shrink-0" aria-hidden="true" />}
                     </div>
-                    <span className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${meta.classes}`}>
+                    <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${meta.classes}`}>
                       {meta.label}
                     </span>
                   </button>

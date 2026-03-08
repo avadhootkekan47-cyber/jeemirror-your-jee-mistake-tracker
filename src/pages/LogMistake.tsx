@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { SUBJECTS, CHAPTERS, CHEMISTRY_GROUPS, MISTAKE_TYPES } from '@/lib/constants';
 import { Check, ChevronDown, ChevronUp, Atom, FlaskConical, Calculator } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const SUBJECT_ICONS: Record<string, React.ReactNode> = {
   Physics: <Atom className="h-6 w-6" />,
@@ -16,6 +17,7 @@ const STEPS = ['Subject', 'Chapter', 'Error Type'];
 export default function LogMistake() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [subject, setSubject] = useState('');
   const [chapter, setChapter] = useState('');
@@ -30,7 +32,7 @@ export default function LogMistake() {
     try {
       const { data: authData, error: authError } = await supabase.auth.getUser();
       if (authError || !authData?.user) {
-        alert('Could not retrieve user. Please log in again.');
+        toast({ title: 'Error', description: 'Could not retrieve user. Please log in again.', variant: 'destructive' });
         setSaving(false);
         return;
       }
@@ -46,12 +48,13 @@ export default function LogMistake() {
 
       setSaving(false);
       if (error) {
-        alert(`Failed to save mistake: ${error.message}`);
+        toast({ title: 'Error', description: `Failed to save: ${error.message}`, variant: 'destructive' });
         return;
       }
+      toast({ title: 'Mistake logged 🎯', description: `${subject} → ${chapter}` });
       setSaved(true);
     } catch (err: any) {
-      alert(`Unexpected error: ${err.message}`);
+      toast({ title: 'Error', description: `Unexpected error: ${err.message}`, variant: 'destructive' });
       setSaving(false);
     }
   };
@@ -71,14 +74,14 @@ export default function LogMistake() {
       <div className="flex min-h-[60vh] items-center justify-center animate-fade-in">
         <div className="text-center space-y-4">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20">
-            <Check className="h-8 w-8 text-emerald-400" />
+            <Check className="h-8 w-8 text-emerald-400" aria-hidden="true" />
           </div>
-          <h2 className="text-xl font-bold">Mistake Logged!</h2>
+          <h2 className="text-xl font-bold text-foreground">Mistake Logged!</h2>
           <div className="flex gap-3 justify-center">
-            <button onClick={resetForm} className="rounded-lg border border-border px-5 py-2.5 font-medium transition-colors hover:bg-secondary">
+            <button onClick={resetForm} className="rounded-lg border border-border px-5 py-2.5 font-medium transition-colors hover:bg-secondary text-foreground touch-target">
               Log Another
             </button>
-            <button onClick={() => navigate('/dashboard')} className="rounded-lg bg-primary px-5 py-2.5 font-medium text-primary-foreground transition-all hover:opacity-90">
+            <button onClick={() => navigate('/dashboard')} className="rounded-lg gradient-primary px-5 py-2.5 font-medium text-primary-foreground transition-all hover:opacity-90 touch-target">
               Go to Dashboard
             </button>
           </div>
@@ -97,7 +100,7 @@ export default function LogMistake() {
               <button
                 key={c}
                 onClick={() => { setChapter(c); setStep(3); }}
-                className="w-full rounded-xl border border-border bg-card p-4 text-left font-medium transition-all hover:border-primary hover:bg-primary/5 active:scale-[0.98]"
+                className="w-full rounded-xl border border-border bg-card p-4 text-left font-medium transition-all hover:border-primary hover:bg-primary/5 active:scale-[0.98] text-foreground touch-target"
               >
                 {c}
               </button>
@@ -110,7 +113,7 @@ export default function LogMistake() {
       <button
         key={c}
         onClick={() => { setChapter(c); setStep(3); }}
-        className="w-full rounded-xl border border-border bg-card p-4 text-left font-medium transition-all hover:border-primary hover:bg-primary/5 active:scale-[0.98]"
+        className="w-full rounded-xl border border-border bg-card p-4 text-left font-medium transition-all hover:border-primary hover:bg-primary/5 active:scale-[0.98] text-foreground touch-target"
       >
         {c}
       </button>
@@ -119,10 +122,10 @@ export default function LogMistake() {
 
   return (
     <div className="max-w-lg mx-auto animate-fade-in">
-      <h1 className="text-2xl font-bold mb-4">Log a Mistake</h1>
+      <h1 className="text-2xl font-bold mb-4 text-foreground">Log a Mistake</h1>
 
       {/* Progress indicator */}
-      <div className="flex items-center gap-2 mb-6">
+      <div className="flex items-center gap-2 mb-6" role="progressbar" aria-valuenow={step} aria-valuemin={1} aria-valuemax={3} aria-label="Form progress">
         {STEPS.map((label, i) => {
           const stepNum = i + 1;
           const isActive = step === stepNum;
@@ -141,7 +144,7 @@ export default function LogMistake() {
                 >
                   {isDone ? <Check className="h-4 w-4" /> : stepNum}
                 </div>
-                <span className={`text-[10px] mt-1 ${isActive || isDone ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                <span className={`text-xs mt-1 ${isActive || isDone ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
                   {label}
                 </span>
               </div>
@@ -162,7 +165,8 @@ export default function LogMistake() {
               <button
                 key={s}
                 onClick={() => { setSubject(s); setStep(2); }}
-                className="flex items-center gap-4 rounded-xl border border-border bg-card p-5 text-left text-lg font-semibold transition-all hover:border-primary hover:bg-primary/5 active:scale-[0.98]"
+                aria-label={`Select ${s}`}
+                className="flex items-center gap-4 rounded-xl border border-border bg-card p-5 text-left text-lg font-semibold transition-all hover:border-primary hover:bg-primary/5 active:scale-[0.98] text-foreground touch-target"
               >
                 <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   {SUBJECT_ICONS[s]}
@@ -202,10 +206,11 @@ export default function LogMistake() {
               <button
                 key={t}
                 onClick={() => setMistakeType(t)}
-                className={`rounded-xl border p-4 text-left text-sm font-medium transition-all active:scale-[0.98] ${
+                aria-pressed={mistakeType === t}
+                className={`rounded-xl border p-4 text-left text-sm font-medium transition-all active:scale-[0.98] touch-target ${
                   mistakeType === t
                     ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border bg-card hover:border-primary hover:bg-primary/5'
+                    : 'border-border bg-card hover:border-primary hover:bg-primary/5 text-foreground'
                 }`}
               >
                 {t}
@@ -218,24 +223,29 @@ export default function LogMistake() {
               <button
                 onClick={() => setNotesOpen(!notesOpen)}
                 className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                aria-expanded={notesOpen}
               >
                 {notesOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                 Add notes (optional)
               </button>
               {notesOpen && (
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="What went wrong? How will you avoid this next time?"
-                  rows={3}
-                  className="w-full rounded-lg border border-border bg-secondary px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none animate-fade-in"
-                />
+                <>
+                  <label htmlFor="mistake-notes" className="sr-only">Mistake notes</label>
+                  <textarea
+                    id="mistake-notes"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="What went wrong? How will you avoid this next time?"
+                    rows={3}
+                    className="w-full rounded-lg border border-border bg-secondary px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none animate-fade-in"
+                  />
+                </>
               )}
 
               <button
                 disabled={saving}
                 onClick={handleSave}
-                className="w-full rounded-xl bg-primary py-4 text-lg font-semibold text-primary-foreground transition-all hover:opacity-90 disabled:opacity-50"
+                className="w-full rounded-xl gradient-primary py-4 text-lg font-semibold text-primary-foreground transition-all hover:opacity-90 disabled:opacity-50 touch-target"
               >
                 {saving ? 'Saving...' : 'Save Mistake'}
               </button>
