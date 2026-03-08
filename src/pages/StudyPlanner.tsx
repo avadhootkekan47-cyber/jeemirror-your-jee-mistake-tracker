@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { SUBJECTS, CHAPTERS } from '@/lib/constants';
 import { getSubjectClass } from '@/lib/constants';
-import { Plus, Trash2, CheckCircle2, AlertCircle, BookOpen, Clock } from 'lucide-react';
+import { Plus, Trash2, CheckCircle2, AlertCircle, BookOpen, Clock, Minus } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
 interface StudyTask {
@@ -20,6 +20,109 @@ const independentChapters: Record<string, string[]> = {
   Chemistry: ['Biomolecules', 'Chemistry in Everyday Life', 'Environmental Chemistry', 'Polymers', 's-block elements', 'p-block elements'],
   Mathematics: ['Statistics', 'Mathematical Reasoning', 'Sets & Relations', 'Probability', 'Matrices & Determinants'],
 };
+
+// Build flat list of all chapters with their subject
+const ALL_CHAPTERS = Object.entries(CHAPTERS).flatMap(([subject, chapters]) =>
+  chapters.map(ch => ({ subject, chapter: ch }))
+);
+
+function ChapterSearchInput({
+  value,
+  onChange,
+  onSelectChapter,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onSelectChapter: (chapter: string, subject: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const filtered = value.trim()
+    ? ALL_CHAPTERS.filter(c => c.chapter.toLowerCase().includes(value.toLowerCase()))
+    : ALL_CHAPTERS;
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative sm:col-span-2">
+      <input
+        type="text"
+        placeholder="Search chapter..."
+        value={value}
+        onChange={(e) => { onChange(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+        aria-label="Search chapter"
+        autoComplete="off"
+      />
+      {open && (
+        <div className="absolute z-50 mt-1 w-full max-h-56 overflow-y-auto rounded-lg border border-border bg-popover shadow-lg">
+          {filtered.length === 0 ? (
+            <div className="px-3 py-2 text-sm text-muted-foreground">No chapters found</div>
+          ) : (
+            filtered.map((c, i) => (
+              <button
+                key={i}
+                type="button"
+                className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors text-left"
+                onClick={() => {
+                  onSelectChapter(c.chapter, c.subject);
+                  setOpen(false);
+                }}
+              >
+                <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${getSubjectClass(c.subject)}`}>
+                  {c.subject.slice(0, 3).toUpperCase()}
+                </span>
+                <span className="text-foreground">{c.chapter}</span>
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TimePicker({ minutes, onChange }: { minutes: number; onChange: (m: number) => void }) {
+  const hrs = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+
+  const setHrs = (h: number) => onChange(Math.max(0, Math.min(5, h)) * 60 + mins);
+  const setMins = (m: number) => onChange(hrs * 60 + Math.max(0, Math.min(55, m)));
+
+  return (
+    <div className="flex items-center gap-1">
+      {/* Hours */}
+      <div className="flex flex-col items-center">
+        <button type="button" onClick={() => setHrs(hrs + 1)} className="text-muted-foreground hover:text-primary p-0.5 touch-target" aria-label="Increase hours">
+          <Plus className="h-3.5 w-3.5" />
+        </button>
+        <span className="text-sm font-bold tabular-nums w-6 text-center text-foreground">{hrs}h</span>
+        <button type="button" onClick={() => setHrs(hrs - 1)} className="text-muted-foreground hover:text-primary p-0.5 touch-target" aria-label="Decrease hours">
+          <Minus className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <span className="text-muted-foreground text-xs">:</span>
+      {/* Minutes */}
+      <div className="flex flex-col items-center">
+        <button type="button" onClick={() => setMins(mins + 5)} className="text-muted-foreground hover:text-primary p-0.5 touch-target" aria-label="Increase minutes">
+          <Plus className="h-3.5 w-3.5" />
+        </button>
+        <span className="text-sm font-bold tabular-nums w-7 text-center text-foreground">{String(mins).padStart(2, '0')}m</span>
+        <button type="button" onClick={() => setMins(mins - 5)} className="text-muted-foreground hover:text-primary p-0.5 touch-target" aria-label="Decrease minutes">
+          <Minus className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function StudyPlanner() {
   const { user } = useAuth();
@@ -114,37 +217,31 @@ export default function StudyPlanner() {
         <h3 className="font-semibold mb-4 flex items-center gap-2">
           <Plus className="h-4 w-4 text-primary" /> Add Today's Task
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-start">
           <select
             value={subject}
             onChange={(e) => setSubject(e.target.value as typeof subject)}
             className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
+            aria-label="Select subject"
           >
             {SUBJECTS.map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
           </select>
-          <input
-            type="text"
-            placeholder="Topic / Chapter"
+          <ChapterSearchInput
             value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            className="rounded-lg border border-input bg-background px-3 py-2 text-sm sm:col-span-2"
+            onChange={setTopic}
+            onSelectChapter={(ch, subj) => {
+              setTopic(ch);
+              setSubject(subj as typeof subject);
+            }}
           />
-          <div className="flex gap-2">
-            <input
-              type="number"
-              min={5}
-              max={300}
-              value={minutes}
-              onChange={(e) => setMinutes(Number(e.target.value))}
-              className="rounded-lg border border-input bg-background px-3 py-2 text-sm w-20"
-              placeholder="min"
-            />
+          <div className="flex items-center gap-3">
+            <TimePicker minutes={minutes} onChange={setMinutes} />
             <button
               onClick={addTask}
               disabled={adding || !topic.trim()}
-              className="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+              className="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50 touch-target"
             >
               Add
             </button>
@@ -171,7 +268,7 @@ export default function StudyPlanner() {
                 key={task.id}
                 className={`flex items-center gap-3 rounded-xl border border-border bg-card p-4 card-hover ${task.is_done ? 'opacity-60' : ''}`}
               >
-                <button onClick={() => toggleDone(task.id, task.is_done)}>
+                <button onClick={() => toggleDone(task.id, task.is_done)} aria-label={task.is_done ? `Mark ${task.topic} undone` : `Mark ${task.topic} done`}>
                   <CheckCircle2 className={`h-5 w-5 ${task.is_done ? 'text-[hsl(var(--success))]' : 'text-muted-foreground'}`} />
                 </button>
                 <span className={`rounded-md px-2 py-0.5 text-xs font-semibold ${getSubjectClass(task.subject)}`}>
@@ -181,7 +278,7 @@ export default function StudyPlanner() {
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Clock className="h-3 w-3" /> {task.estimated_minutes}m
                 </span>
-                <button onClick={() => deleteTask(task.id)} className="text-muted-foreground hover:text-destructive transition-colors">
+                <button onClick={() => deleteTask(task.id)} className="text-muted-foreground hover:text-destructive transition-colors" aria-label={`Delete ${task.topic}`}>
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
@@ -200,7 +297,7 @@ export default function StudyPlanner() {
           <div className="space-y-2">
             {backlog.map((task) => (
               <div key={task.id} className="flex items-center gap-3 rounded-xl border border-destructive/30 bg-card p-4">
-                <button onClick={() => toggleDone(task.id, task.is_done)}>
+                <button onClick={() => toggleDone(task.id, task.is_done)} aria-label={`Mark ${task.topic} done`}>
                   <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
                 </button>
                 <span className={`rounded-md px-2 py-0.5 text-xs font-semibold ${getSubjectClass(task.subject)}`}>
@@ -208,7 +305,7 @@ export default function StudyPlanner() {
                 </span>
                 <span className="font-medium flex-1">{task.topic}</span>
                 <span className="text-xs text-muted-foreground">{task.date}</span>
-                <button onClick={() => deleteTask(task.id)} className="text-muted-foreground hover:text-destructive transition-colors">
+                <button onClick={() => deleteTask(task.id)} className="text-muted-foreground hover:text-destructive transition-colors" aria-label={`Delete ${task.topic}`}>
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
