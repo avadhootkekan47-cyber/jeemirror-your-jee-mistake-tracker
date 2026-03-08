@@ -6,6 +6,8 @@ import { CheckCircle2, BookOpen, Zap, PartyPopper } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import EmptyState from '@/components/EmptyState';
+import FlipClock from '@/components/FlipClock';
+import TypingGreeting from '@/components/TypingGreeting';
 
 interface ReviewItem {
   id: string;
@@ -44,32 +46,6 @@ function getGreeting(hour: number) {
   return 'Good Night 🌙';
 }
 
-function ISTClock() {
-  const [time, setTime] = useState(() =>
-    new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true })
-  );
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      setTime(new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true }));
-    }, 10000);
-    return () => clearInterval(id);
-  }, []);
-
-  return (
-    <div className="relative flex items-center justify-center" aria-label={`Current time: ${time}`} role="timer">
-      {/* Pulsing ring */}
-      <div className="absolute h-28 w-28 rounded-full border-2 border-primary/30 animate-[pulse_3s_ease-in-out_infinite]" />
-      <div className="absolute h-32 w-32 rounded-full border border-primary/15 animate-[pulse_3s_ease-in-out_infinite_0.5s]" />
-      {/* Clock face */}
-      <div className="relative z-10 flex items-center justify-center h-24 w-24 rounded-full bg-card border border-primary/20"
-        style={{ boxShadow: '0 0 40px rgba(124,58,237,0.25), inset 0 0 20px rgba(124,58,237,0.08)' }}>
-        <span className="text-xl font-bold tabular-nums text-foreground tracking-wide">{time}</span>
-      </div>
-    </div>
-  );
-}
-
 export default function TodayScreen() {
   const { user, profile } = useAuth();
   const { toast } = useToast();
@@ -81,6 +57,11 @@ export default function TodayScreen() {
   const istDate = getISTDate();
   const greeting = getGreeting(istDate.getHours());
   const dailyQuote = DAILY_QUOTES[istDate.getDate() % DAILY_QUOTES.length];
+
+  // Split greeting into text + emoji
+  const greetingParts = greeting.split(' ');
+  const greetingEmoji = greetingParts.pop() || '';
+  const greetingText = greetingParts.join(' ') + ', ' + displayName + ' ' + greetingEmoji;
 
   useEffect(() => {
     if (!user) return;
@@ -117,7 +98,6 @@ export default function TodayScreen() {
       .eq('id', id);
     setReviewDue(prev => prev.filter(r => r.id !== id));
 
-    // Toast with undo for "Got it"
     toast({
       title: 'Marked as reviewed ✅',
       description: item ? `${item.chapter} — ${item.mistake_type}` : 'Review completed',
@@ -163,12 +143,10 @@ export default function TodayScreen() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Greeting + Clock */}
-      <div className="card-premium p-5 flex items-center justify-between gap-4">
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold">
-            {greeting.split(' ').slice(0, 2).join(' ')},{' '}
-            <span className="text-gradient">{displayName}</span>{' '}
-            {greeting.split(' ').pop()}
+      <div className="card-premium p-5 flex flex-col sm:flex-row items-center justify-between gap-5">
+        <div className="flex-1 text-center sm:text-left">
+          <h1 className="text-2xl font-bold text-foreground">
+            <TypingGreeting text={greetingText} speed={50} />
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             {totalItems > 0 ? `${totalItems} items remaining` : 'All caught up! 🎉'}
@@ -179,7 +157,7 @@ export default function TodayScreen() {
             </div>
           )}
         </div>
-        <ISTClock />
+        <FlipClock />
       </div>
 
       {/* Empty state for first-time users */}

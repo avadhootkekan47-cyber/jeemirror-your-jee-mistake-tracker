@@ -211,3 +211,40 @@
 .fab-pulse {
   animation: fab-pulse 2s ease-in-out infinite;
 }
+
+/* Flip clock */
+.perspective-500 {
+  perspective: 500px;
+}
+
+@keyframes flip-top {
+  0% { transform: rotateX(0deg); }
+  100% { transform: rotateX(-90deg); opacity: 0; }
+}
+@keyframes flip-bottom {
+  0% { transform: rotateX(90deg); opacity: 0; }
+  100% { transform: rotateX(0deg); opacity: 1; }
+}
+.animate-flip-top {
+  animation: flip-top 0.3s ease-in forwards;
+  backface-visibility: hidden;
+}
+.animate-flip-bottom {
+  animation: flip-bottom 0.3s 0.15s ease-out forwards;
+  opacity: 0;
+  backface-visibility: hidden;
+}
+
+.flip-digit-glow {
+  box-shadow: 0 0 12px -2px hsl(253 63% 55% / 0.35), inset 0 1px 1px hsl(253 63% 55% / 0.1);
+}
+
+@keyframes clock-breathe {
+  0%, 100% { box-shadow: 0 0 20px -4px hsl(253 63% 55% / 0.2), 0 0 40px -8px hsl(220 76% 40% / 0.15); }
+  50% { box-shadow: 0 0 30px -2px hsl(253 63% 55% / 0.35), 0 0 60px -4px hsl(220 76% 40% / 0.25); }
+}
+.clock-breathing-glow {
+  animation: clock-breathe 3s ease-in-out infinite;
+  border: 1px solid hsl(253 63% 55% / 0.15);
+  background: hsl(240 18% 4% / 0.8);
+}
