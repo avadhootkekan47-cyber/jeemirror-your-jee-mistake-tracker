@@ -6,6 +6,7 @@ import { getSubjectClass } from '@/lib/constants';
 import { PlusCircle, TrendingUp, Flame, Repeat, Target, Save } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
+import EmptyState from '@/components/EmptyState';
 
 interface Mistake {
   id: string;
@@ -47,6 +48,7 @@ export default function Dashboard() {
   const [recent, setRecent] = useState<Mistake[]>([]);
   const [goals, setGoals] = useState<WeeklyGoals>(DEFAULT_GOALS);
   const [editingGoals, setEditingGoals] = useState(false);
+  const [isFirstTime, setIsFirstTime] = useState(false);
   const { toast } = useToast();
 
   const displayName = profile?.name || profile?.full_name || user?.email?.split('@')[0] || 'Student';
@@ -104,6 +106,7 @@ export default function Dashboard() {
       }
 
       setStats({ total: total || 0, thisWeek: thisWeek || 0, streak, topType });
+      setIsFirstTime((total || 0) === 0);
 
       const { data: recentData } = await supabase
         .from('mistakes')
@@ -155,7 +158,7 @@ export default function Dashboard() {
     if (error) {
       toast({ title: 'Error', description: 'Could not save goals', variant: 'destructive' });
     } else {
-      toast({ title: 'Saved!', description: 'Weekly goals updated' });
+      toast({ title: 'Goal saved 💾', description: 'Weekly goals updated successfully' });
       setEditingGoals(false);
     }
   };
@@ -169,6 +172,20 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Welcome banner for first-time users */}
+      {isFirstTime && (
+        <div className="card-premium p-6 text-center space-y-3 glow-primary">
+          <h2 className="text-xl font-bold text-foreground">Welcome to JEEMirror! 🎉</h2>
+          <p className="text-sm text-muted-foreground">Start by logging your first mistake 👇</p>
+          <Link
+            to="/log"
+            className="inline-flex items-center gap-2 rounded-xl gradient-primary px-6 py-3 text-sm font-semibold text-primary-foreground glow-primary transition-all hover:opacity-90"
+          >
+            <PlusCircle className="h-5 w-5" /> Log Your First Mistake
+          </Link>
+        </div>
+      )}
+
       <div className="flex items-center gap-2 rounded-xl bg-accent/10 border border-accent/20 px-4 py-2.5 text-sm text-accent">
         🔒 Your data is securely saved to the cloud — accessible from any device
       </div>
@@ -180,8 +197,8 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {statCards.map((s, i) => (
           <div key={s.label} className={`card-premium p-4 chart-animate chart-animate-delay-${i + 1}`}>
-            <s.icon className={`h-4 w-4 ${s.color} mb-2`} />
-            <div className="text-2xl font-bold tabular-nums count-up">{s.value}</div>
+            <s.icon className={`h-4 w-4 ${s.color} mb-2`} aria-hidden="true" />
+            <div className="text-2xl font-bold tabular-nums count-up text-foreground">{s.value}</div>
             <div className="text-xs text-muted-foreground mt-1">{s.label}</div>
           </div>
         ))}
@@ -198,13 +215,14 @@ export default function Dashboard() {
       {/* Weekly Goals */}
       <div className="card-premium p-5">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <Target className="h-5 w-5 text-primary" />
+          <h2 className="text-lg font-semibold flex items-center gap-2 text-foreground">
+            <Target className="h-5 w-5 text-primary" aria-hidden="true" />
             Weekly Goals
           </h2>
           <button
             onClick={() => editingGoals ? saveGoals() : setEditingGoals(true)}
-            className="flex items-center gap-1.5 text-sm text-primary hover:underline"
+            className="flex items-center gap-1.5 text-sm text-primary hover:underline touch-target"
+            aria-label={editingGoals ? 'Save goals' : 'Edit goals'}
           >
             {editingGoals ? <><Save className="h-3.5 w-3.5" /> Save</> : 'Edit Targets'}
           </button>
@@ -219,24 +237,28 @@ export default function Dashboard() {
             return (
               <div key={key} className="space-y-1.5">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">{emoji} {label}</span>
+                  <span className="font-medium text-foreground">{emoji} {label}</span>
                   <span className="text-muted-foreground tabular-nums">
                     {editingGoals ? (
                       <span className="flex items-center gap-1">
+                        <label htmlFor={`${key}-done`} className="sr-only">{label} completed</label>
                         <input
+                          id={`${key}-done`}
                           type="number"
                           min={0}
                           value={done}
                           onChange={(e) => setGoals(prev => ({ ...prev, [`${key}_done`]: parseInt(e.target.value) || 0 }))}
-                          className="w-14 rounded border border-border bg-background px-2 py-0.5 text-sm text-center"
+                          className="w-14 rounded border border-border bg-background px-2 py-0.5 text-sm text-center text-foreground"
                         />
                         /
+                        <label htmlFor={`${key}-target`} className="sr-only">{label} target</label>
                         <input
+                          id={`${key}-target`}
                           type="number"
                           min={1}
                           value={target}
                           onChange={(e) => setGoals(prev => ({ ...prev, [`${key}_target`]: parseInt(e.target.value) || 1 }))}
-                          className="w-14 rounded border border-border bg-background px-2 py-0.5 text-sm text-center"
+                          className="w-14 rounded border border-border bg-background px-2 py-0.5 text-sm text-center text-foreground"
                         />
                       </span>
                     ) : (
@@ -244,7 +266,7 @@ export default function Dashboard() {
                     )}
                   </span>
                 </div>
-                <Progress value={pct} className="h-2.5" />
+                <Progress value={pct} className="h-2.5" aria-label={`${label}: ${pct}% complete`} />
               </div>
             );
           })}
@@ -253,26 +275,26 @@ export default function Dashboard() {
 
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold">Recent Mistakes</h2>
+          <h2 className="text-lg font-semibold text-foreground">Recent Mistakes</h2>
           <Link to="/history" className="text-sm text-primary hover:underline">View All</Link>
         </div>
         {recent.length === 0 ? (
-          <div className="card-premium p-8 text-center">
-            <div className="text-3xl mb-3">📝</div>
-            <p className="text-muted-foreground">No mistakes logged yet. Start by logging your first one!</p>
-            <Link to="/log" className="inline-flex items-center gap-2 mt-4 rounded-lg gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground">
-              <PlusCircle className="h-4 w-4" /> Log First Mistake
-            </Link>
-          </div>
+          <EmptyState
+            icon="📝"
+            title="No mistakes logged yet"
+            description="Start by logging your first mistake to track your JEE preparation progress!"
+            ctaLabel="Log First Mistake"
+            ctaLink="/log"
+          />
         ) : (
           <div className="space-y-2">
             {recent.map((m) => (
-              <div key={m.id} className="flex items-center gap-3 card-premium p-4">
+              <div key={m.id} className="flex items-center gap-3 card-premium p-4" role="listitem">
                 <span className={`rounded-md px-2 py-0.5 text-xs font-semibold ${getSubjectClass(m.subject)}`}>
                   {m.subject}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate">{m.chapter}</div>
+                  <div className="font-medium truncate text-foreground">{m.chapter}</div>
                   <div className="text-xs text-muted-foreground">{m.mistake_type}</div>
                 </div>
                 <div className="text-xs text-muted-foreground whitespace-nowrap tabular-nums">
