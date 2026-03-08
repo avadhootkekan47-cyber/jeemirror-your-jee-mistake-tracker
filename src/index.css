@@ -17,13 +17,13 @@
     --secondary: 240 18% 8%;
     --secondary-foreground: 210 40% 98%;
     --muted: 240 18% 10%;
-    --muted-foreground: 215 20% 55%;
+    --muted-foreground: 230 15% 70%;
     --accent: 160 84% 39%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
-    --border: 240 15% 12%;
-    --input: 240 15% 12%;
+    --border: 240 15% 15%;
+    --input: 240 15% 15%;
     --ring: 253 63% 55%;
     --radius: 0.75rem;
 
@@ -34,12 +34,12 @@
     --warning: 45 93% 47%;
 
     --sidebar-background: 240 20% 2%;
-    --sidebar-foreground: 215 20% 65%;
+    --sidebar-foreground: 230 15% 72%;
     --sidebar-primary: 253 63% 55%;
     --sidebar-primary-foreground: 210 40% 98%;
     --sidebar-accent: 253 63% 12%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 240 15% 10%;
+    --sidebar-border: 240 15% 12%;
     --sidebar-ring: 253 63% 55%;
 
     --gradient-primary: linear-gradient(135deg, hsl(253, 63%, 55%), hsl(220, 76%, 40%));
@@ -58,6 +58,12 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.02'/%3E%3C/svg%3E");
+  }
+  /* Global focus ring for keyboard navigation */
+  *:focus-visible {
+    outline: 2px solid hsl(253, 63%, 55%);
+    outline-offset: 2px;
+    border-radius: 4px;
   }
 }
 
@@ -142,6 +148,11 @@
   .tabular-nums {
     font-variant-numeric: tabular-nums;
   }
+  /* Minimum touch target helper */
+  .touch-target {
+    min-height: 48px;
+    min-width: 48px;
+  }
 }
 
 /* Shimmer animation */
@@ -190,4 +201,13 @@
 }
 .shimmer-border {
   animation: shimmer-border 2s ease-in-out infinite;
+}
+
+/* FAB pulse */
+@keyframes fab-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 hsl(253 63% 55% / 0.4); }
+  50% { box-shadow: 0 0 0 12px hsl(253 63% 55% / 0); }
+}
+.fab-pulse {
+  animation: fab-pulse 2s ease-in-out infinite;
 }
