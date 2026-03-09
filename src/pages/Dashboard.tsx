@@ -182,18 +182,22 @@ export default function Dashboard() {
   const saveGoals = async () => {
     if (!user) return;
     const weekStart = new Date();
-    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+    const day = weekStart.getDay();
+    const diff = day === 0 ? 6 : day - 1;
+    weekStart.setDate(weekStart.getDate() - diff);
     weekStart.setHours(0, 0, 0, 0);
+    const mondayStr = weekStart.toISOString().split('T')[0];
 
+    const { id, ...goalsWithoutId } = goals;
     const payload = {
       user_id: user.id,
-      week_start: weekStart.toISOString().split('T')[0],
-      ...goals,
+      week_start: mondayStr,
+      ...goalsWithoutId,
     };
 
-    const { error } = goals.id
-      ? await supabase.from('weekly_goals').update(payload).eq('id', goals.id)
-      : await supabase.from('weekly_goals').upsert(payload, { onConflict: 'user_id,week_start' });
+    const { error } = await supabase
+      .from('weekly_goals')
+      .upsert(payload, { onConflict: 'user_id,week_start' });
 
     if (error) {
       toast({ title: 'Error', description: 'Could not save goals', variant: 'destructive' });
