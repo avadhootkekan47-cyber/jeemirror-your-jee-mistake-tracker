@@ -324,7 +324,7 @@ export default function Dashboard() {
                       <span className="flex items-center gap-1">
                         <input
                           type="number" min={0} value={done}
-                          onChange={(e) => setGoals(prev => ({ ...prev, [`${key}_done`]: parseInt(e.target.value) || 0 }))}
+                          onChange={(e) => setGoals(prev => ({ ...prev, [`${key}_current`]: parseInt(e.target.value) || 0 }))}
                           className="w-14 rounded border border-border bg-background px-2 py-0.5 text-sm text-center text-foreground"
                         />
                         /

@@ -288,11 +288,15 @@ export default function Analytics() {
               <ResponsiveContainer width="100%" height={220}>
                 <PieChart>
                   <Pie data={bySubject} cx="50%" cy="50%" innerRadius={55} outerRadius={85}
-                    dataKey="count" nameKey="name" stroke="none"
-                    label={({ name, count }) => `${name}: ${count}`}>
+                    dataKey="count" nameKey="name" stroke="none">
                     {bySubject.map((_, i) => <Cell key={i} fill={pieColors[i % pieColors.length]} />)}
                   </Pie>
-                  <Tooltip contentStyle={CHART_THEME.tooltip} />
+                  <Tooltip contentStyle={CHART_THEME.tooltip}
+                    formatter={(value: number, name: string) => {
+                      const total = bySubject.reduce((s, d) => s + d.count, 0);
+                      const pct = total > 0 ? Math.round((value / total) * 100) : 0;
+                      return [`${value} mistakes (${pct}%)`, name];
+                    }} />
                   <Legend wrapperStyle={{ fontSize: 12, color: CHART_THEME.text }} />
                 </PieChart>
               </ResponsiveContainer>
