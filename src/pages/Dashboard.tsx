@@ -156,18 +156,19 @@ export default function Dashboard() {
         .limit(5);
       setRecent(recentData || []);
 
-      // Fetch weekly goals
+      // Fetch weekly goals — week_start = most recent Monday
       const weekStart = new Date();
-      weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+      const day = weekStart.getDay();
+      const diff = day === 0 ? 6 : day - 1; // Monday = 0 offset
+      weekStart.setDate(weekStart.getDate() - diff);
       weekStart.setHours(0, 0, 0, 0);
+      const mondayStr = weekStart.toISOString().split('T')[0];
 
       const { data: goalData } = await supabase
         .from('weekly_goals')
         .select('*')
         .eq('user_id', user.id)
-        .gte('week_start', weekStart.toISOString().split('T')[0])
-        .order('created_at', { ascending: false })
-        .limit(1)
+        .eq('week_start', mondayStr)
         .maybeSingle();
 
       if (goalData) {
