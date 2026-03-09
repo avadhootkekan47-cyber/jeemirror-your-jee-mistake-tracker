@@ -311,7 +311,7 @@ export default function Dashboard() {
 
         <div className="space-y-4">
           {GOAL_METRICS.map(({ key, label, emoji }) => {
-            const done = goals[`${key}_done` as keyof WeeklyGoals] as number;
+            const done = goals[`${key}_current` as keyof WeeklyGoals] as number;
             const target = goals[`${key}_target` as keyof WeeklyGoals] as number;
             const pct = target > 0 ? Math.min(100, Math.round((done / target) * 100)) : 0;
 
