@@ -19,20 +19,20 @@ interface Mistake {
 interface WeeklyGoals {
   id?: string;
   chapters_target: number;
-  chapters_done: number;
+  chapters_current: number;
   topics_target: number;
-  topics_done: number;
+  topics_current: number;
   backlog_target: number;
-  backlog_done: number;
+  backlog_current: number;
   questions_target: number;
-  questions_done: number;
+  questions_current: number;
 }
 
 const DEFAULT_GOALS: WeeklyGoals = {
-  chapters_target: 5, chapters_done: 0,
-  topics_target: 10, topics_done: 0,
-  backlog_target: 3, backlog_done: 0,
-  questions_target: 50, questions_done: 0,
+  chapters_target: 5, chapters_current: 0,
+  topics_target: 10, topics_current: 0,
+  backlog_target: 3, backlog_current: 0,
+  questions_target: 50, questions_current: 0,
 };
 
 const GOAL_METRICS = [
