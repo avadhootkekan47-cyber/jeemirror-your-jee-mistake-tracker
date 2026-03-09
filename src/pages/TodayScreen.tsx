@@ -52,13 +52,13 @@ export default function TodayScreen() {
   const [reviewDue, setReviewDue] = useState<ReviewItem[]>([]);
   const [tasks, setTasks] = useState<StudyTask[]>([]);
   const [allCleared, setAllCleared] = useState(false);
+  const [hasMistakes, setHasMistakes] = useState<boolean | null>(null);
 
   const displayName = profile?.name || profile?.full_name || user?.email?.split('@')[0] || 'Student';
   const istDate = getISTDate();
   const greeting = getGreeting(istDate.getHours());
   const dailyQuote = DAILY_QUOTES[istDate.getDate() % DAILY_QUOTES.length];
 
-  // Split greeting into text + emoji
   const greetingParts = greeting.split(' ');
   const greetingEmoji = greetingParts.pop() || '';
   const greetingText = greetingParts.join(' ') + ', ' + displayName + ' ' + greetingEmoji;
@@ -70,6 +70,14 @@ export default function TodayScreen() {
 
   const fetchData = async () => {
     if (!user) return;
+
+    // Check if user has any mistakes at all
+    const { count: totalMistakes } = await supabase
+      .from('mistakes')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id);
+    setHasMistakes((totalMistakes || 0) > 0);
+
     const { data: srs } = await supabase
       .from('mistakes')
       .select('id, subject, chapter, mistake_type, notes, created_at')
@@ -138,30 +146,36 @@ export default function TodayScreen() {
   const completedItems = totalAll - totalItems;
   const progressPct = totalAll > 0 ? Math.round((completedItems / totalAll) * 100) : 0;
 
-  const isEmpty = reviewDue.length === 0 && tasks.length === 0;
+  const isFirstTime = hasMistakes === false;
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Greeting + Clock */}
-      <div className="card-premium p-5 flex flex-col sm:flex-row items-center justify-between gap-5">
-        <div className="flex-1 text-center sm:text-left">
-          <h1 className="text-2xl font-bold text-foreground">
-            <TypingGreeting text={greetingText} speed={50} />
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {totalItems > 0 ? `${totalItems} items remaining` : 'All caught up! 🎉'}
-          </p>
-          {allCleared && (
-            <div className="mt-2 inline-flex items-center gap-2 rounded-full gradient-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground confetti-burst">
-              <PartyPopper className="h-3.5 w-3.5" aria-hidden="true" /> All Clear!
-            </div>
-          )}
+      {/* Greeting + Inline Clock */}
+      <div className="card-premium p-5">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-2xl font-bold text-foreground">
+              <TypingGreeting text={greetingText} speed={50} />
+            </h1>
+            {!isFirstTime && (
+              <p className="text-sm text-muted-foreground mt-1">
+                {totalItems > 0 ? `${totalItems} items remaining` : 'All caught up! 🎉'}
+              </p>
+            )}
+            {allCleared && (
+              <div className="mt-2 inline-flex items-center gap-2 rounded-full gradient-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground confetti-burst">
+                <PartyPopper className="h-3.5 w-3.5" aria-hidden="true" /> All Clear!
+              </div>
+            )}
+          </div>
+          <div className="shrink-0 scale-75 origin-right">
+            <FlipClock />
+          </div>
         </div>
-        <FlipClock />
       </div>
 
-      {/* Empty state for first-time users */}
-      {isEmpty && (
+      {/* Getting started guide — ONLY for first-time users (0 mistakes) */}
+      {isFirstTime && (
         <EmptyState
           icon="🚀"
           title="Here's how to get started"
@@ -176,7 +190,7 @@ export default function TodayScreen() {
         />
       )}
 
-      {/* Progress Ring */}
+      {/* Progress Ring — only if has items */}
       {totalAll > 0 && (
         <div className="card-premium p-5 flex items-center gap-5">
           <div className="relative h-20 w-20 flex-shrink-0" role="progressbar" aria-valuenow={progressPct} aria-valuemin={0} aria-valuemax={100} aria-label="Today's progress">
@@ -205,65 +219,69 @@ export default function TodayScreen() {
       )}
 
       {/* Study Tasks */}
-      <div className="card-premium p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <Zap className="h-5 w-5 text-accent" aria-hidden="true" />
-          <h2 className="font-semibold text-foreground">Today's Priorities</h2>
+      {!isFirstTime && (
+        <div className="card-premium p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Zap className="h-5 w-5 text-accent" aria-hidden="true" />
+            <h2 className="font-semibold text-foreground">Today's Priorities</h2>
+          </div>
+          {tasks.length === 0 ? (
+            <div className="text-center py-6">
+              <div className="text-3xl mb-2">📋</div>
+              <p className="text-sm text-muted-foreground mb-3">No tasks for today.</p>
+              <Link to="/planner" className="text-sm text-primary hover:underline">Set up your planner →</Link>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {tasks.map(t => (
+                <div key={t.id} className={`flex items-center gap-3 rounded-lg border border-border p-3 transition-all ${t.is_done ? 'opacity-60' : ''}`}>
+                  <button onClick={() => !t.is_done && markTaskDone(t.id)}
+                    aria-label={t.is_done ? `${t.topic} completed` : `Mark ${t.topic} as done`}
+                    className={`h-6 w-6 rounded-full border-2 flex items-center justify-center transition-colors touch-target ${t.is_done ? 'border-accent bg-accent' : 'border-muted-foreground hover:border-primary'}`}>
+                    {t.is_done && <CheckCircle2 className="h-3.5 w-3.5 text-accent-foreground" />}
+                  </button>
+                  <span className={`rounded-md px-2 py-0.5 text-xs font-semibold ${getSubjectClass(t.subject)}`}>{t.subject}</span>
+                  <span className={`text-sm flex-1 ${t.is_done ? 'line-through text-muted-foreground' : 'text-foreground'}`}>{t.topic}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        {tasks.length === 0 ? (
-          <div className="text-center py-6">
-            <div className="text-3xl mb-2">📋</div>
-            <p className="text-sm text-muted-foreground mb-3">No tasks for today.</p>
-            <Link to="/planner" className="text-sm text-primary hover:underline">Set up your planner →</Link>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {tasks.map(t => (
-              <div key={t.id} className={`flex items-center gap-3 rounded-lg border border-border p-3 transition-all ${t.is_done ? 'opacity-60' : ''}`}>
-                <button onClick={() => !t.is_done && markTaskDone(t.id)}
-                  aria-label={t.is_done ? `${t.topic} completed` : `Mark ${t.topic} as done`}
-                  className={`h-6 w-6 rounded-full border-2 flex items-center justify-center transition-colors touch-target ${t.is_done ? 'border-accent bg-accent' : 'border-muted-foreground hover:border-primary'}`}>
-                  {t.is_done && <CheckCircle2 className="h-3.5 w-3.5 text-accent-foreground" />}
-                </button>
-                <span className={`rounded-md px-2 py-0.5 text-xs font-semibold ${getSubjectClass(t.subject)}`}>{t.subject}</span>
-                <span className={`text-sm flex-1 ${t.is_done ? 'line-through text-muted-foreground' : 'text-foreground'}`}>{t.topic}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      )}
 
       {/* SRS Review */}
-      <div className="card-premium p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <BookOpen className="h-5 w-5 text-primary" aria-hidden="true" />
-          <h2 className="font-semibold text-foreground">Review Due</h2>
-          <span className="text-xs rounded-full bg-primary/15 text-primary px-2.5 py-0.5 font-medium ml-auto tabular-nums">{reviewDue.length} pending</span>
-        </div>
-        {reviewDue.length === 0 ? (
-          <div className="text-center py-6">
-            <div className="text-3xl mb-2">🔥</div>
-            <p className="text-sm text-muted-foreground">No reviews due! You're all caught up.</p>
+      {!isFirstTime && (
+        <div className="card-premium p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <BookOpen className="h-5 w-5 text-primary" aria-hidden="true" />
+            <h2 className="font-semibold text-foreground">Review Due</h2>
+            <span className="text-xs rounded-full bg-primary/15 text-primary px-2.5 py-0.5 font-medium ml-auto tabular-nums">{reviewDue.length} pending</span>
           </div>
-        ) : (
-          <div className="space-y-2">
-            {reviewDue.map(r => (
-              <div key={r.id} className="flex items-center gap-3 rounded-lg border border-border p-3">
-                <span className={`rounded-md px-2 py-0.5 text-xs font-semibold ${getSubjectClass(r.subject)}`}>{r.subject}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate text-foreground">{r.chapter}</div>
-                  <div className="text-xs text-muted-foreground">{r.mistake_type}</div>
+          {reviewDue.length === 0 ? (
+            <div className="text-center py-6">
+              <div className="text-3xl mb-2">🔥</div>
+              <p className="text-sm text-muted-foreground">No reviews due! You're all caught up.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {reviewDue.map(r => (
+                <div key={r.id} className="flex items-center gap-3 rounded-lg border border-border p-3">
+                  <span className={`rounded-md px-2 py-0.5 text-xs font-semibold ${getSubjectClass(r.subject)}`}>{r.subject}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate text-foreground">{r.chapter}</div>
+                    <div className="text-xs text-muted-foreground">{r.mistake_type}</div>
+                  </div>
+                  <button onClick={() => markReviewed(r.id)}
+                    aria-label={`Mark ${r.chapter} as reviewed`}
+                    className="rounded-lg bg-accent/15 text-accent hover:bg-accent/25 px-3 py-1.5 text-xs font-medium transition-colors touch-target">
+                    Got it ✓
+                  </button>
                 </div>
-                <button onClick={() => markReviewed(r.id)}
-                  aria-label={`Mark ${r.chapter} as reviewed`}
-                  className="rounded-lg bg-accent/15 text-accent hover:bg-accent/25 px-3 py-1.5 text-xs font-medium transition-colors touch-target">
-                  Got it ✓
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Quick links */}
       <div className="grid grid-cols-2 gap-3">

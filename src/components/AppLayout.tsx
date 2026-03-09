@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { LayoutDashboard, PlusCircle, History, BarChart3, Settings, LogOut, BookOpen, CalendarCheck, Sparkles, ClipboardCheck, MoreHorizontal } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, History, BarChart3, Settings, LogOut, BookOpen, CalendarCheck, Sparkles, ClipboardCheck, MoreHorizontal, Sun, Moon } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import FloatingActionButton from '@/components/FloatingActionButton';
 
@@ -25,6 +25,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [moreOpen, setMoreOpen] = useState(false);
   const location = useLocation();
 
+  // Theme toggle
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('jeemirror-theme') as 'dark' | 'light') || 'dark';
+    }
+    return 'dark';
+  });
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('light', theme === 'light');
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    localStorage.setItem('jeemirror-theme', theme);
+  }, [theme]);
+
   const displayName = profile?.name || profile?.full_name || user?.email?.split('@')[0] || '??';
   const initials = displayName !== '??'
     ? displayName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
@@ -37,11 +51,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen">
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex w-[260px] flex-col border-r border-sidebar-border bg-sidebar fixed inset-y-0 left-0 z-30">
-        <div className="p-5 flex items-center gap-2">
-          <img src="/logo.png" alt="JEEMirror logo" className="h-8 w-8 drop-shadow-[0_0_8px_hsl(253,63%,55%,0.4)]" />
-          <h1 className="text-xl font-bold">
-            <span className="text-gradient">JEE</span>Mirror
-          </h1>
+        <div className="p-5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <img src="/logo.png" alt="JEEMirror logo" className="h-8 w-8 drop-shadow-[0_0_8px_hsl(253,63%,55%,0.4)]" />
+            <h1 className="text-xl font-bold">
+              <span className="text-gradient">JEE</span>Mirror
+            </h1>
+          </div>
+          <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="rounded-lg p-2 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors touch-target"
+            aria-label="Toggle theme">
+            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
         </div>
         <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto" aria-label="Main navigation">
           {navItems.map((item) => (
@@ -91,7 +112,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Mobile FAB */}
       <FloatingActionButton />
 
-      {/* Mobile bottom nav - glassmorphism */}
+      {/* Mobile bottom nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex border-t border-border glass" aria-label="Mobile navigation">
         {mobileBottomItems.map((item) => {
           const isActive = location.pathname === item.to;
@@ -128,6 +149,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <DrawerTitle>More</DrawerTitle>
           </DrawerHeader>
           <div className="px-4 pb-6 space-y-1">
+            {/* Theme toggle in drawer */}
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground touch-target"
+            >
+              {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+            </button>
             {moreItems.map((item) => {
               const isActive = location.pathname === item.to;
               return (
