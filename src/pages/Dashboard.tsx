@@ -19,20 +19,20 @@ interface Mistake {
 interface WeeklyGoals {
   id?: string;
   chapters_target: number;
-  chapters_done: number;
+  chapters_current: number;
   topics_target: number;
-  topics_done: number;
+  topics_current: number;
   backlog_target: number;
-  backlog_done: number;
+  backlog_current: number;
   questions_target: number;
-  questions_done: number;
+  questions_current: number;
 }
 
 const DEFAULT_GOALS: WeeklyGoals = {
-  chapters_target: 5, chapters_done: 0,
-  topics_target: 10, topics_done: 0,
-  backlog_target: 3, backlog_done: 0,
-  questions_target: 50, questions_done: 0,
+  chapters_target: 5, chapters_current: 0,
+  topics_target: 10, topics_current: 0,
+  backlog_target: 3, backlog_current: 0,
+  questions_target: 50, questions_current: 0,
 };
 
 const GOAL_METRICS = [
@@ -156,18 +156,19 @@ export default function Dashboard() {
         .limit(5);
       setRecent(recentData || []);
 
-      // Fetch weekly goals
+      // Fetch weekly goals — week_start = most recent Monday
       const weekStart = new Date();
-      weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+      const day = weekStart.getDay();
+      const diff = day === 0 ? 6 : day - 1; // Monday = 0 offset
+      weekStart.setDate(weekStart.getDate() - diff);
       weekStart.setHours(0, 0, 0, 0);
+      const mondayStr = weekStart.toISOString().split('T')[0];
 
       const { data: goalData } = await supabase
         .from('weekly_goals')
         .select('*')
         .eq('user_id', user.id)
-        .gte('week_start', weekStart.toISOString().split('T')[0])
-        .order('created_at', { ascending: false })
-        .limit(1)
+        .eq('week_start', mondayStr)
         .maybeSingle();
 
       if (goalData) {
@@ -181,18 +182,22 @@ export default function Dashboard() {
   const saveGoals = async () => {
     if (!user) return;
     const weekStart = new Date();
-    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+    const day = weekStart.getDay();
+    const diff = day === 0 ? 6 : day - 1;
+    weekStart.setDate(weekStart.getDate() - diff);
     weekStart.setHours(0, 0, 0, 0);
+    const mondayStr = weekStart.toISOString().split('T')[0];
 
+    const { id, ...goalsWithoutId } = goals;
     const payload = {
       user_id: user.id,
-      week_start: weekStart.toISOString().split('T')[0],
-      ...goals,
+      week_start: mondayStr,
+      ...goalsWithoutId,
     };
 
-    const { error } = goals.id
-      ? await supabase.from('weekly_goals').update(payload).eq('id', goals.id)
-      : await supabase.from('weekly_goals').upsert(payload, { onConflict: 'user_id,week_start' });
+    const { error } = await supabase
+      .from('weekly_goals')
+      .upsert(payload, { onConflict: 'user_id,week_start' });
 
     if (error) {
       toast({ title: 'Error', description: 'Could not save goals', variant: 'destructive' });
@@ -306,7 +311,7 @@ export default function Dashboard() {
 
         <div className="space-y-4">
           {GOAL_METRICS.map(({ key, label, emoji }) => {
-            const done = goals[`${key}_done` as keyof WeeklyGoals] as number;
+            const done = goals[`${key}_current` as keyof WeeklyGoals] as number;
             const target = goals[`${key}_target` as keyof WeeklyGoals] as number;
             const pct = target > 0 ? Math.min(100, Math.round((done / target) * 100)) : 0;
 
@@ -319,7 +324,7 @@ export default function Dashboard() {
                       <span className="flex items-center gap-1">
                         <input
                           type="number" min={0} value={done}
-                          onChange={(e) => setGoals(prev => ({ ...prev, [`${key}_done`]: parseInt(e.target.value) || 0 }))}
+                          onChange={(e) => setGoals(prev => ({ ...prev, [`${key}_current`]: parseInt(e.target.value) || 0 }))}
                           className="w-14 rounded border border-border bg-background px-2 py-0.5 text-sm text-center text-foreground"
                         />
                         /
