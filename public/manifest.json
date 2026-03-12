@@ -1,14 +1,51 @@
 {
-  "name": "JEEMirror",
+  "name": "JEEMirror — JEE Mistake Tracker",
   "short_name": "JEEMirror",
-  "description": "Track your JEE mistakes and eliminate weak spots",
+  "description": "Track your JEE mistakes, find patterns, fix targeted gaps. Built for JEE 2026 aspirants.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0A0A0F",
-  "theme_color": "#7C3AED",
+  "background_color": "#07070f",
+  "theme_color": "#7c3aed",
   "orientation": "portrait",
+  "scope": "/",
+  "lang": "en-IN",
+  "categories": ["education", "productivity"],
   "icons": [
-    { "src": "/og-image.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/og-image.png", "sizes": "512x512", "type": "image/png" }
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/og-image.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "label": "JEEMirror Dashboard"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Log Mistake",
+      "short_name": "Log",
+      "description": "Quickly log a new mistake",
+      "url": "/log",
+      "icons": [{ "src": "/logo.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Dashboard",
+      "short_name": "Today",
+      "description": "View today's priorities",
+      "url": "/dashboard",
+      "icons": [{ "src": "/logo.png", "sizes": "96x96" }]
+    }
   ]
 }
