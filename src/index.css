@@ -300,3 +300,61 @@
   border: 1px solid hsl(253 63% 55% / 0.15);
   background: hsl(240 18% 4% / 0.8);
 }
+
+/* ═══ Landing Page Styles ═══ */
+#cursor-dot {
+  width: 8px; height: 8px;
+  background-color: #00F0FF;
+  border-radius: 50%;
+  position: fixed; top: 0; left: 0;
+  pointer-events: none; z-index: 9999;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 10px #00F0FF, 0 0 20px #00F0FF;
+}
+#cursor-ring {
+  width: 40px; height: 40px;
+  border: 1px solid rgba(139, 92, 246, 0.5);
+  border-radius: 50%;
+  position: fixed; top: 0; left: 0;
+  pointer-events: none; z-index: 9998;
+  transform: translate(-50%, -50%);
+  transition: width 0.2s, height 0.2s, border-color 0.2s;
+}
+.film-grain {
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  pointer-events: none; z-index: 9997; opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+.glass-panel {
+  background: rgba(28, 25, 54, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.landing-page ::-webkit-scrollbar { width: 8px; }
+.landing-page ::-webkit-scrollbar-track { background: #0B0914; }
+.landing-page ::-webkit-scrollbar-thumb { background: #1C1936; border-radius: 4px; }
+.landing-page ::-webkit-scrollbar-thumb:hover { background: #8B5CF6; }
+.text-gradient-cyan {
+  background: linear-gradient(135deg, #00F0FF 0%, #8B5CF6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% auto;
+  animation: textShine 4s linear infinite;
+}
+@keyframes textShine {
+  to { background-position: 200% center; }
+}
+.perspective-1000 { perspective: 1000px; }
+.preserve-3d { transform-style: preserve-3d; }
+.bg-grid {
+  background-size: 40px 40px;
+  background-image:
+    linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+}
+.ui-mockup {
+  box-shadow: 0 0 100px rgba(139, 92, 246, 0.2), inset 0 0 0 1px rgba(255,255,255,0.1);
+  transform-style: preserve-3d;
+}
+.mascot-glow { filter: drop-shadow(0 0 15px rgba(0, 240, 255, 0.6)); }
