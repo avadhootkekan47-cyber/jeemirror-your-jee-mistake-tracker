@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JEE Mirror | Your JEE Mistake Tracker</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        background: '#0B0914',
+                        surface: '#121021',
+                        surface2: '#1C1936',
+                        cyan: '#00F0FF',
+                        violet: '#8B5CF6',
+                        red: '#EF4444',
+                        crimson: '#991B1B'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Outfit', 'sans-serif'],
+                    },
+                    backgroundImage: {
+                        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Custom Styles for Max Animations -->
+    <style>
+        body { 
+            background-color: #0B0914; 
+            color: white; 
+            overflow-x: hidden; 
+            cursor: none;
+        }
+        
+        /* Mobile fallback for cursor */
+        @media (pointer: coarse) {
+            body { cursor: auto; }
+            #cursor-dot, #cursor-ring { display: none !important; }
+        }
+
+        /* Preloader */
+        #preloader {
+            position: fixed; inset: 0; background: #0B0914; z-index: 999999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .loading-text { font-family: 'Outfit', sans-serif; font-size: 5vw; font-weight: 900; -webkit-text-stroke: 1px rgba(255,255,255,0.1); color: transparent; position: relative; }
+        .loading-text::before {
+            content: attr(data-text); position: absolute; left: 0; top: 0;
+            color: #00F0FF; width: 0%; overflow: hidden; white-space: nowrap; transition: width 0.1s;
+            text-shadow: 0 0 20px rgba(0,240,255,0.8);
+        }
+
+        /* Custom Cursor Elements */
+        #cursor-dot {
+            width: 8px; height: 8px; background-color: #00F0FF; border-radius: 50%;
+            position: fixed; top: 0; left: 0; pointer-events: none; z-index: 99999;
+            transform: translate(-50%, -50%); box-shadow: 0 0 10px #00F0FF, 0 0 20px #00F0FF;
+            transition: width 0.2s, height 0.2s, background-color 0.2s;
+        }
+        #cursor-ring {
+            width: 40px; height: 40px; border: 1px solid rgba(139, 92, 246, 0.5); border-radius: 50%;
+            position: fixed; top: 0; left: 0; pointer-events: none; z-index: 99998;
+            transform: translate(-50%, -50%); transition: width 0.3s, height 0.3s, border-color 0.3s, background-color 0.3s;
+        }
+
+        /* Cinematic Film Grain */
+        .film-grain {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none; z-index: 9997; opacity: 0.05;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        /* Spotlight Cards Base */
+        .spotlight-card {
+            background: rgba(28, 25, 54, 0.4); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05); position: relative; overflow: hidden;
+        }
+        .spotlight-card::before {
+            content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0, 240, 255, 0.08), transparent 40%);
+            z-index: 0; opacity: 0; transition: opacity 0.5s; pointer-events: none;
+        }
+        .spotlight-card:hover::before { opacity: 1; }
+        .spotlight-card > * { position: relative; z-index: 1; }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0B0914; }
+        ::-webkit-scrollbar-thumb { background: #1C1936; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00F0FF; }
+
+        .text-gradient-cyan {
+            background: linear-gradient(135deg, #00F0FF 0%, #8B5CF6 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-size: 200% auto; animation: textShine 4s linear infinite;
+        }
+
+        @keyframes textShine { to { background-position: 200% center; } }
+        
+        .perspective-1000 { perspective: 1000px; }
+        .preserve-3d { transform-style: preserve-3d; }
+        
+        .bg-grid {
+            background-size: 40px 40px;
+            background-image: 
+                linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+        }
+
+        .ui-mockup {
+            box-shadow: 0 0 100px rgba(139, 92, 246, 0.3), inset 0 0 0 1px rgba(255,255,255,0.15);
+            transform-style: preserve-3d;
+        }
+        
+        .mascot-glow { filter: drop-shadow(0 0 20px rgba(0, 240, 255, 0.8)); }
+
+        .word-wrap { display: inline-block; overflow: hidden; }
+        .char-wrap { display: inline-block; transform-origin: bottom center; }
+    </style>
+</head>
+<body class="antialiased selection:bg-cyan selection:text-background relative">
+
+    <!-- Preloader -->
+    <div id="preloader">
+        <div class="loading-text mb-4" data-text="SYSTEM INITIALIZING">SYSTEM INITIALIZING</div>
+        <div class="w-64 h-1 bg-white/10 rounded-full overflow-hidden relative shadow-[0_0_15px_rgba(0,240,255,0.2)]">
+            <div id="loading-bar" class="absolute top-0 left-0 h-full bg-cyan w-0 shadow-[0_0_15px_rgba(0,240,255,0.8)]"></div>
+        </div>
+        <div id="loading-percentage" class="text-cyan font-mono text-sm mt-4 tracking-widest">0%</div>
+    </div>
+
+    <!-- Global Elements -->
+    <div class="film-grain"></div>
+    <div id="cursor-dot"></div>
+    <div id="cursor-ring"></div>
+    <div id="scroll-progress" class="fixed top-0 left-0 h-1 bg-gradient-to-r from-cyan to-violet z-[100] origin-left scale-x-0 w-full shadow-[0_0_20px_rgba(0,240,255,1)]"></div>
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-50 transition-all duration-300 spotlight-card border-b-0 py-4 opacity-0" id="main-nav">
+        <div class="max-w-7xl mx-auto px-6 flex justify-between items-center">
+            <div class="flex items-center gap-2 magnetic hover-trigger">
+                <div class="w-8 h-8 rounded bg-gradient-to-br from-cyan to-violet flex items-center justify-center font-display font-bold text-background text-lg shadow-[0_0_15px_rgba(139,92,246,0.8)]">M</div>
+                <span class="font-display font-bold text-xl tracking-tight hidden sm:block">JEE Mirror</span>
+            </div>
+            <div class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-400">
+                <a href="#features" class="hover-trigger hover:text-white hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all relative group">
+                    Features
+                    <span class="absolute -bottom-1 left-0 w-0 h-[2px] bg-cyan transition-all duration-300 group-hover:w-full"></span>
+                </a>
+                <a href="#dashboard" class="hover-trigger hover:text-white hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all relative group">
+                    Dashboard
+                    <span class="absolute -bottom-1 left-0 w-0 h-[2px] bg-cyan transition-all duration-300 group-hover:w-full"></span>
+                </a>
+                <a href="#pricing" class="hover-trigger hover:text-white hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all relative group text-white">
+                    Pricing
+                    <span class="absolute -bottom-1 left-0 w-full h-[2px] bg-cyan transition-all duration-300"></span>
+                </a>
+            </div>
+            <a href="#pricing" class="magnetic hover-trigger px-6 py-2.5 rounded-full bg-cyan/10 text-cyan border border-cyan/30 hover:bg-cyan hover:text-background transition-all font-bold text-sm shadow-[0_0_15px_rgba(0,240,255,0.2)] hover:shadow-[0_0_25px_rgba(0,240,255,0.8)]">
+                View Pricing
+            </a>
+        </div>
+    </nav>
+
+    <!-- SECTION 1: HERO (Zoom, Tilt & Particle Canvas) -->
+    <section id="hero" class="relative h-[200vh] perspective-1000">
+        <!-- Interactive Particle Network -->
+        <canvas id="hero-canvas" class="absolute inset-0 w-full h-[100vh] z-0 opacity-60"></canvas>
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.1)_0%,transparent_60%)] z-0 pointer-events-none"></div>
+        
+        <div class="sticky top-0 h-screen w-full overflow-hidden flex flex-col items-center justify-center pt-20 z-10">
+            <!-- Background Mockup -->
+            <div id="hero-mockup-wrapper" class="absolute w-[85vw] max-w-6xl aspect-video z-0 preserve-3d">
+                <div id="hero-mockup" class="w-full h-full spotlight-card rounded-2xl ui-mockup flex flex-col overflow-hidden opacity-0 blur-xl scale-75">
+                    <div class="h-12 border-b border-white/10 flex items-center px-6 gap-4 bg-white/5">
+                        <div class="flex gap-2"><div class="w-3 h-3 rounded-full bg-red/50 hover:bg-red transition-colors shadow-[0_0_10px_rgba(239,68,68,0)] hover:shadow-[0_0_10px_rgba(239,68,68,1)]"></div><div class="w-3 h-3 rounded-full bg-yellow-500/50 hover:bg-yellow-500 transition-colors shadow-[0_0_10px_rgba(234,179,8,0)] hover:shadow-[0_0_10px_rgba(234,179,8,1)]"></div><div class="w-3 h-3 rounded-full bg-green-500/50 hover:bg-green-500 transition-colors shadow-[0_0_10px_rgba(34,197,94,0)] hover:shadow-[0_0_10px_rgba(34,197,94,1)]"></div></div>
+                        <div class="w-64 h-4 rounded-full bg-white/10 mx-auto"></div>
+                    </div>
+                    <div class="flex-1 flex p-6 gap-6 bg-background/90 backdrop-blur-3xl">
+                        <div class="w-1/4 flex flex-col gap-4">
+                            <div class="h-10 rounded-lg bg-white/10 w-full hover:bg-white/20 transition-all cursor-pointer border border-white/5"></div>
+                            <div class="h-10 rounded-lg bg-white/5 w-3/4 hover:bg-white/20 transition-all cursor-pointer border border-white/5"></div>
+                            <div class="h-10 rounded-lg bg-white/5 w-5/6 hover:bg-white/20 transition-all cursor-pointer border border-white/5"></div>
+                        </div>
+                        <div class="w-3/4 flex flex-col gap-4">
+                            <div class="flex gap-4">
+                                <div class="h-36 rounded-xl bg-violet/10 border border-violet/30 flex-1 relative overflow-hidden group hover:border-violet/60 transition-all cursor-pointer">
+                                    <div class="absolute inset-0 bg-gradient-to-tr from-violet/0 to-violet/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                                    <div class="absolute top-4 left-4 w-8 h-8 rounded-full bg-violet/30 flex items-center justify-center text-violet"><i class="ph ph-chart-line-up"></i></div>
+                                </div>
+                                <div class="h-36 rounded-xl bg-cyan/10 border border-cyan/30 flex-1 relative overflow-hidden group hover:border-cyan/60 transition-all cursor-pointer">
+                                    <div class="absolute inset-0 bg-gradient-to-tr from-cyan/0 to-cyan/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                                    <div class="absolute top-4 left-4 w-8 h-8 rounded-full bg-cyan/30 flex items-center justify-center text-cyan"><i class="ph ph-target"></i></div>
+                                </div>
+                            </div>
+                            <div class="h-72 rounded-xl bg-surface border border-white/10 w-full flex items-end p-6 gap-3 group">
+                                <div class="flex-1 bg-cyan/30 h-[30%] rounded-t-sm transition-all duration-500 group-hover:h-[40%] group-hover:bg-cyan/50 hover:shadow-[0_0_15px_rgba(0,240,255,0.5)]"></div>
+                                <div class="flex-1 bg-cyan/50 h-[50%] rounded-t-sm transition-all duration-500 group-hover:h-[60%] group-hover:bg-cyan/70 hover:shadow-[0_0_15px_rgba(0,240,255,0.5)]"></div>
+                                <div class="flex-1 bg-cyan/70 h-[40%] rounded-t-sm transition-all duration-500 group-hover:h-[50%] group-hover:bg-cyan hover:shadow-[0_0_15px_rgba(0,240,255,0.5)]"></div>
+                                <div class="flex-1 bg-violet/50 h-[80%] rounded-t-sm transition-all duration-500 group-hover:h-[90%] group-hover:bg-violet hover:shadow-[0_0_15px_rgba(139,92,246,0.5)]"></div>
+                                <div class="flex-1 bg-violet/80 h-[60%] rounded-t-sm transition-all duration-500 group-hover:h-[70%] group-hover:bg-violet hover:shadow-[0_0_15px_rgba(139,92,246,0.5)]"></div>
+                                <div class="flex-1 bg-red/60 h-[90%] rounded-t-sm transition-all duration-500 group-hover:h-[100%] group-hover:bg-red shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:shadow-[0_0_20px_rgba(239,68,68,1)]"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Foreground Text -->
+            <div id="hero-content" class="relative z-10 text-center max-w-5xl px-6 flex flex-col items-center pointer-events-none opacity-0">
+                <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-surface2/80 backdrop-blur-md border border-cyan/30 text-xs font-medium text-cyan mb-8 shadow-[0_0_20px_rgba(0,240,255,0.3)]">
+                    <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-cyan"></span></span>
+                    Now Tracking JEE 2025 & 2026
+                </div>
+                <h1 class="text-6xl md:text-[5.5rem] font-display font-black leading-[1.1] tracking-tight mb-6 drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]">
+                    Turn Every <span class="text-gradient-cyan">Mistake</span><br>Into Your Secret Weapon.
+                </h1>
+                <p class="text-xl md:text-2xl text-gray-300 mb-10 max-w-2xl font-medium drop-shadow-lg">
+                    JEE Mirror helps you track, tag, and analyze your errors so you never repeat them on exam day.
+                </p>
+                <div class="flex gap-4 pointer-events-auto">
+                    <a href="#pricing" class="magnetic hover-trigger px-10 py-5 rounded-2xl bg-cyan text-background font-bold text-lg hover:shadow-[0_0_50px_rgba(0,240,255,0.8)] hover:scale-105 transition-all duration-300 flex items-center gap-2">
+                        Try JEE Mirror <i class="ph ph-arrow-right font-bold"></i>
+                    </a>
+                    <a href="#features" class="magnetic hover-trigger px-10 py-5 rounded-2xl spotlight-card text-white font-medium text-lg hover:border-white/30 transition-all border border-white/10 flex items-center gap-2">
+                        View Demo <i class="ph ph-play-circle text-xl"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Scroll Indicator -->
+            <div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 opacity-70 cursor-pointer pointer-events-auto hover:opacity-100 transition-opacity" onclick="window.scrollTo(0, window.innerHeight)">
+                <span class="text-xs uppercase tracking-[0.3em] text-cyan font-bold drop-shadow-[0_0_10px_rgba(0,240,255,0.5)]">Scroll to Initiate</span>
+                <div class="w-[2px] h-16 bg-gradient-to-b from-cyan to-transparent relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-1/2 bg-white animate-[bounce_2s_infinite]"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 2: PROBLEM -> SOLUTION (Advanced Parallax) -->
+    <section class="relative min-h-screen flex items-center py-32 bg-background overflow-hidden border-t border-white/5" id="problem-section">
+        <div class="absolute inset-0 bg-grid opacity-20"></div>
+        <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-red/10 rounded-full blur-[120px] pointer-events-none"></div>
+        <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-violet/10 rounded-full blur-[120px] pointer-events-none"></div>
+        
+        <!-- Floating Math/Physics Elements (Parallax) -->
+        <div class="absolute inset-0 overflow-hidden pointer-events-none text-white/5 font-display text-4xl md:text-7xl font-black select-none tracking-tighter">
+            <div class="parallax-element absolute top-[10%] left-[5%]">∫ e^x dx = e^x + C</div>
+            <div class="parallax-element absolute top-[40%] right-[10%] drop-shadow-[0_0_20px_rgba(255,255,255,0.1)]">F = G(m1m2)/r²</div>
+            <div class="parallax-element absolute bottom-[20%] left-[15%]">Δx · Δp ≥ ℏ/2</div>
+            <div class="parallax-element absolute top-[70%] right-[25%]">PV = nRT</div>
+            <div class="parallax-element absolute top-[20%] left-[40%] opacity-50 text-2xl">E = mc²</div>
+        </div>
+
+        <div class="max-w-6xl mx-auto px-6 relative z-10 text-center perspective-1000">
+            <h2 id="problem-headline" class="text-5xl md:text-7xl font-display font-black leading-[1.1] mb-10 drop-shadow-2xl">
+                You aren't losing marks because you don't know the concepts.
+            </h2>
+            <p id="problem-body" class="text-2xl md:text-4xl text-gray-400 leading-relaxed max-w-5xl mx-auto font-medium">
+                You are losing them because you are stuck in a loop. You take a mock test, check the score, and move on—only to repeat the <span class="text-red font-bold drop-shadow-[0_0_15px_rgba(239,68,68,0.8)]">exact same silly errors.</span> It is time to break the cycle.
+            </p>
+        </div>
+    </section>
+
+    <!-- SECTION 3: FEATURES (Interactive Scroll Media) -->
+    <section id="features" class="relative bg-surface">
+        <div class="h-[300vh] relative" id="features-wrapper">
+            <div class="sticky top-0 h-screen w-full flex items-center max-w-7xl mx-auto px-6 gap-16 overflow-hidden">
+                
+                <!-- Left: Text Content -->
+                <div class="w-[45%] flex flex-col gap-32 py-32 relative">
+                    <div class="feature-text opacity-100 transition-opacity duration-500">
+                        <div class="w-16 h-16 rounded-2xl bg-violet/10 border border-violet/30 flex items-center justify-center text-violet mb-8 shadow-[0_0_30px_rgba(139,92,246,0.3)] backdrop-blur-md">
+                            <i class="ph ph-note-pencil text-3xl"></i>
+                        </div>
+                        <h3 class="text-4xl font-display font-bold mb-4">Zero-friction logging.</h3>
+                        <p class="text-xl text-gray-400 leading-relaxed">Tag every mistake by subject, chapter, and difficulty in seconds right after your mock test. No more messy notebooks.</p>
+                    </div>
+                    
+                    <div class="feature-text opacity-20 transition-opacity duration-500">
+                        <div class="w-16 h-16 rounded-2xl bg-red/10 border border-red/30 flex items-center justify-center text-red mb-8 shadow-[0_0_30px_rgba(239,68,68,0.3)] backdrop-blur-md">
+                            <i class="ph ph-chart-polar text-3xl"></i>
+                        </div>
+                        <h3 class="text-4xl font-display font-bold mb-4">Pattern detection.</h3>
+                        <p class="text-xl text-gray-400 leading-relaxed">Spot your weakest links instantly. Our Chapter Heatmap turns darker red the more mistakes you make in a specific topic.</p>
+                    </div>
+
+                    <div class="feature-text opacity-20 transition-opacity duration-500">
+                        <div class="w-16 h-16 rounded-2xl bg-cyan/10 border border-cyan/30 flex items-center justify-center text-cyan mb-8 shadow-[0_0_30px_rgba(0,240,255,0.3)] backdrop-blur-md">
+                            <i class="ph ph-calendar-check text-3xl"></i>
+                        </div>
+                        <h3 class="text-4xl font-display font-bold mb-4">Targeted Revision.</h3>
+                        <p class="text-xl text-gray-400 leading-relaxed">Stop guessing what to study. The Study Planner automatically serves you un-reviewed mistakes and prioritizes weak chapters.</p>
+                    </div>
+                </div>
+
+                <!-- Right: Dynamic Media / Mockup -->
+                <div class="w-[55%] h-[75vh] spotlight-card rounded-3xl border border-white/10 overflow-hidden relative shadow-[0_0_80px_rgba(0,0,0,0.8)]">
+                    <div class="h-12 border-b border-white/5 bg-background flex items-center px-6 gap-3 z-20 relative">
+                        <div class="w-3 h-3 rounded-full bg-red/50 hover:bg-red transition-colors shadow-[0_0_10px_rgba(239,68,68,0)] hover:shadow-[0_0_10px_rgba(239,68,68,1)]"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-500/50 hover:bg-yellow-500 transition-colors shadow-[0_0_10px_rgba(234,179,8,0)] hover:shadow-[0_0_10px_rgba(234,179,8,1)]"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500/50 hover:bg-green-500 transition-colors shadow-[0_0_10px_rgba(34,197,94,0)] hover:shadow-[0_0_10px_rgba(34,197,94,1)]"></div>
+                        <div class="mx-auto text-sm text-gray-400 font-mono flex items-center gap-2 bg-surface px-4 py-1 rounded-full border border-white/5"><i class="ph ph-lock text-cyan"></i> app.jeemirror.in</div>
+                    </div>
+
+                    <!-- Slide 1 -->
+                    <div class="feature-media absolute top-12 left-0 w-full h-[calc(100%-3rem)] bg-[#100E1C] p-10 transition-all duration-700 opacity-100 translate-y-0">
+                        <h4 class="font-display text-2xl mb-8 flex items-center gap-3"><i class="ph ph-plus-circle text-violet text-3xl"></i> Log New Mistake</h4>
+                        <div class="space-y-5">
+                            <div class="h-14 w-full bg-background rounded-xl border border-white/5 flex items-center px-5 text-gray-400 text-base shadow-inner">Subject: Physics</div>
+                            <div class="h-14 w-full bg-background rounded-xl border border-white/5 flex items-center px-5 text-gray-400 text-base shadow-inner">Chapter: Rotational Motion</div>
+                            <div class="flex gap-3">
+                                <div class="px-4 py-2 rounded-lg bg-red/10 text-red border border-red/30 font-medium">Calculation Error</div>
+                                <div class="px-4 py-2 rounded-lg bg-violet/10 text-violet border border-violet/30 font-medium">Formula forgot</div>
+                            </div>
+                            <div class="h-32 w-full bg-background rounded-xl border border-white/5 mt-6 p-5 text-gray-500 text-sm font-mono shadow-inner leading-relaxed">Moment of inertia of solid sphere is 2/5 MR^2, I used 2/3 MR^2...<span class="animate-ping text-cyan">|</span></div>
+                            <div class="magnetic h-12 w-32 bg-cyan rounded-xl ml-auto mt-6 flex items-center justify-center text-background font-bold text-base hover:shadow-[0_0_20px_rgba(0,240,255,0.8)]">Save</div>
+                        </div>
+                    </div>
+
+                    <!-- Slide 2 -->
+                    <div class="feature-media absolute top-12 left-0 w-full h-[calc(100%-3rem)] bg-[#100E1C] p-10 transition-all duration-700 opacity-0 translate-y-20 scale-95">
+                        <h4 class="font-display text-2xl mb-8 flex items-center gap-3"><i class="ph ph-fire text-red text-3xl drop-shadow-[0_0_10px_rgba(239,68,68,0.8)]"></i> Chapter Heatmap</h4>
+                        <div class="grid grid-cols-4 gap-3">
+                            <div class="aspect-square bg-red/10 rounded-xl border border-white/5"></div>
+                            <div class="aspect-square bg-red/60 rounded-xl border border-white/5 flex items-center justify-center text-lg font-bold text-white shadow-[0_0_20px_rgba(239,68,68,0.5)] z-10 transform scale-105">12</div>
+                            <div class="aspect-square bg-red/20 rounded-xl border border-white/5"></div>
+                            <div class="aspect-square bg-background rounded-xl border border-white/5"></div>
+                            <div class="aspect-square bg-background rounded-xl border border-white/5"></div>
+                            <div class="aspect-square bg-red/40 rounded-xl border border-white/5 flex items-center justify-center text-base">5</div>
+                            <div class="aspect-square bg-red/80 rounded-xl border border-white/5 flex items-center justify-center text-xl font-bold text-white shadow-[0_0_30px_rgba(239,68,68,1)] z-10 transform scale-110 border-red/50">18</div>
+                            <div class="aspect-square bg-red/10 rounded-xl border border-white/5"></div>
+                            <div class="aspect-square bg-red/30 rounded-xl border border-white/5"></div>
+                            <div class="aspect-square bg-background rounded-xl border border-white/5"></div>
+                            <div class="aspect-square bg-background rounded-xl border border-white/5"></div>
+                            <div class="aspect-square bg-red/50 rounded-xl border border-white/5 flex items-center justify-center text-lg">8</div>
+                        </div>
+                        <div class="mt-10 pt-6 border-t border-white/10 flex justify-between items-center text-base">
+                            <span class="text-gray-400 font-medium">Weakest: Electromagnetism</span>
+                            <span class="text-red font-bold flex items-center gap-2 drop-shadow-[0_0_8px_rgba(239,68,68,0.6)]"><i class="ph ph-warning text-xl"></i> Priority High</span>
+                        </div>
+                    </div>
+
+                    <!-- Slide 3 -->
+                    <div class="feature-media absolute top-12 left-0 w-full h-[calc(100%-3rem)] bg-[#100E1C] p-10 transition-all duration-700 opacity-0 translate-y-20 scale-95">
+                        <h4 class="font-display text-2xl mb-8 flex justify-between items-center">
+                            <span class="flex items-center gap-3"><i class="ph ph-calendar-check text-cyan text-3xl"></i> Today's Plan</span>
+                            <span class="text-sm px-3 py-1.5 bg-cyan/10 text-cyan rounded-md border border-cyan/30 font-bold shadow-[0_0_15px_rgba(0,240,255,0.2)]">3 Tasks Pending</span>
+                        </h4>
+                        <div class="space-y-4">
+                            <div class="p-4 bg-background border border-cyan/50 rounded-xl flex items-center gap-4 shadow-[0_0_15px_rgba(0,240,255,0.15)] bg-cyan/5">
+                                <div class="w-6 h-6 rounded border border-cyan/50 flex items-center justify-center bg-cyan/20"><i class="ph ph-check text-cyan text-sm opacity-100 drop-shadow-[0_0_5px_rgba(0,240,255,1)]"></i></div>
+                                <div>
+                                    <div class="text-base font-bold text-cyan">Revise Math: Definite Integrals</div>
+                                    <div class="text-sm text-cyan/70 font-medium mt-1">14 pending mistakes</div>
+                                </div>
+                            </div>
+                            <div class="p-4 bg-background border border-white/10 rounded-xl flex items-center gap-4 opacity-50">
+                                <div class="w-6 h-6 rounded border border-cyan flex items-center justify-center bg-cyan/20"><i class="ph ph-check text-cyan text-sm"></i></div>
+                                <div class="line-through">
+                                    <div class="text-base font-bold">Mock Test 4 Analysis</div>
+                                    <div class="text-sm text-gray-500 mt-1">Completed</div>
+                                </div>
+                            </div>
+                            <div class="p-4 bg-background border border-white/10 rounded-xl flex items-center gap-4">
+                                <div class="w-6 h-6 rounded border border-gray-600 flex items-center justify-center"></div>
+                                <div>
+                                    <div class="text-base font-bold">Physics: Modern Physics Concepts</div>
+                                    <div class="text-sm text-gray-500 mt-1">Suggested based on trends</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 4: MASCOT JOURNEY ("Tedy Style" Upgraded) -->
+    <section class="relative bg-[#0F0D1C] overflow-hidden h-screen" id="journey-section">
+        <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(139,92,246,0.1)_0%,transparent_100%)]"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-1 bg-white/5"></div> <!-- Journey Line -->
+        
+        <div class="w-full h-full flex items-center overflow-hidden relative z-10">
+            <!-- Fixed Mascot -->
+            <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30 flex flex-col items-center pointer-events-none">
+                <!-- Glowing Trail Effect Behind Mascot -->
+                <div class="absolute inset-0 bg-cyan/20 blur-3xl rounded-full scale-150 animate-pulse"></div>
+                
+                <div id="mascot" class="w-28 h-28 mascot-glow relative">
+                    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full drop-shadow-[0_0_30px_rgba(0,240,255,0.6)]">
+                        <rect x="15" y="15" width="70" height="70" rx="20" fill="#1C1936" stroke="#00F0FF" stroke-width="5"/>
+                        <circle cx="35" cy="45" r="6" fill="#00F0FF" class="animate-[pulse_1.5s_infinite] shadow-[0_0_10px_#00F0FF]"/>
+                        <circle cx="65" cy="45" r="6" fill="#00F0FF" class="animate-[pulse_1.5s_infinite] shadow-[0_0_10px_#00F0FF]"/>
+                        <path d="M40 65 Q50 75 60 65" stroke="#00F0FF" stroke-width="4" stroke-linecap="round" fill="none"/>
+                        <!-- Antennas -->
+                        <path d="M50 5 L50 15 M35 10 L45 15 M65 10 L55 15" stroke="#8B5CF6" stroke-width="4" stroke-linecap="round"/>
+                        <circle cx="50" cy="5" r="3" fill="#8B5CF6"/>
+                    </svg>
+                    
+                    <div id="mascot-tooltip" class="absolute -top-16 left-1/2 -translate-x-1/2 whitespace-nowrap px-6 py-3 bg-gradient-to-r from-cyan to-violet text-background font-black text-sm rounded-xl opacity-0 transition-opacity duration-300 shadow-[0_0_30px_rgba(139,92,246,0.8)] tracking-wide">
+                        Ready to analyze!
+                        <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-r-[8px] border-t-[10px] border-l-transparent border-r-transparent border-t-violet"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scrolling Background Environment -->
+            <div id="journey-track" class="absolute top-0 left-0 h-full w-[400vw] flex items-center z-20 pointer-events-none">
+                <div class="w-[100vw] h-full relative flex items-center justify-center">
+                    <div class="absolute inset-0 bg-grid opacity-10"></div>
+                    <div class="absolute right-[25%] top-[25%] text-8xl opacity-10 drop-shadow-2xl"><i class="ph ph-exam"></i></div>
+                    <div class="absolute right-[15%] bottom-[35%] px-8 py-5 spotlight-card rounded-2xl border-red/50 text-red font-black text-2xl rotate-[-5deg] shadow-[0_0_40px_rgba(239,68,68,0.3)]">
+                        Result: 112/300
+                    </div>
+                </div>
+
+                <div class="w-[100vw] h-full relative flex items-center justify-center">
+                    <div class="absolute left-[15%] top-[35%] px-6 py-3 bg-red/10 text-red border-2 border-red/50 rounded-xl font-bold rotate-12 shadow-[0_0_20px_rgba(239,68,68,0.5)]">
+                        Silly Math Error!
+                    </div>
+                    <div class="absolute left-[35%] bottom-[25%] px-6 py-3 bg-yellow-500/10 text-yellow-500 border-2 border-yellow-500/50 rounded-xl font-bold rotate-[-10deg] shadow-[0_0_20px_rgba(234,179,8,0.5)]">
+                        Formula Forgot
+                    </div>
+                    <div class="absolute right-[20%] top-[40%] text-center">
+                        <i class="ph ph-funnel text-7xl text-violet mb-4 drop-shadow-[0_0_25px_rgba(139,92,246,0.8)]"></i>
+                        <p class="text-sm text-gray-400 font-mono tracking-[0.2em] uppercase font-bold">Filtering data...</p>
+                    </div>
+                </div>
+
+                <div class="w-[100vw] h-full relative flex items-center justify-center">
+                    <div class="absolute left-[10%] bottom-[20%] w-80 h-56 spotlight-card border-cyan/40 rounded-2xl flex items-end justify-around p-5 shadow-[0_0_50px_rgba(0,240,255,0.15)]">
+                        <div class="w-10 bg-cyan/20 h-[30%] rounded-t-sm"></div>
+                        <div class="w-10 bg-cyan/40 h-[60%] rounded-t-sm"></div>
+                        <div class="w-10 bg-cyan/60 h-[40%] rounded-t-sm"></div>
+                        <div class="w-10 bg-cyan h-[90%] rounded-t-sm shadow-[0_0_30px_rgba(0,240,255,1)]"></div>
+                    </div>
+                    <div class="absolute right-[20%] top-[30%] text-5xl font-display font-black text-white drop-shadow-2xl">
+                        Patterns <span class="text-cyan drop-shadow-[0_0_20px_rgba(0,240,255,0.8)]">Found.</span>
+                    </div>
+                </div>
+
+                <div class="w-[100vw] h-full relative flex items-center justify-center">
+                    <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,240,255,0.2)_0%,transparent_70%)]"></div>
+                    <div class="absolute right-[25%] text-center">
+                        <h2 class="text-[8rem] font-display font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan to-violet mb-2 drop-shadow-[0_0_40px_rgba(0,240,255,0.6)]">99.9%ile</h2>
+                        <p class="text-2xl text-cyan/90 tracking-[0.3em] uppercase font-black drop-shadow-md">Errors Eliminated.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 5: SPIRAL TUNNEL (Maxed Out 3D Environment) -->
+    <section class="relative bg-background overflow-hidden h-screen flex flex-col items-center justify-center" id="spiral-section">
+        <div class="absolute inset-0 bg-grid opacity-30 pointer-events-none z-0"></div>
+        
+        <div class="text-center absolute top-20 z-50 w-full px-6 drop-shadow-2xl">
+            <h2 class="text-5xl md:text-6xl font-display font-black mb-4">Everything you need to <span class="text-violet drop-shadow-[0_0_25px_rgba(139,92,246,0.8)]">level up</span>.</h2>
+            <p class="text-gray-400 text-xl font-medium">Powerful features wrapped in a frictionless UI.</p>
+        </div>
+
+        <div id="spiral-world" class="absolute top-1/2 left-1/2 w-0 h-0 z-10 pointer-events-none">
+            <!-- Intense Portal Glow -->
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] h-[60vw] bg-violet/20 rounded-full blur-[120px] mix-blend-screen"></div>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40vw] h-[40vw] bg-cyan/20 rounded-full blur-[80px] mix-blend-screen animate-pulse"></div>
+
+            <!-- Cards -->
+            <div class="spiral-card absolute w-[90vw] max-w-lg spotlight-card p-8 md:p-10 rounded-[2rem] border border-white/10 flex flex-col items-center text-center shadow-2xl backdrop-blur-xl">
+                <div class="w-20 h-20 rounded-full bg-cyan/10 border border-cyan/30 text-cyan flex items-center justify-center mb-8 text-4xl shadow-[0_0_40px_rgba(0,240,255,0.4)]"><i class="ph ph-brain"></i></div>
+                <h3 class="text-3xl font-bold mb-3">Concept vs. Silly Mistakes</h3>
+                <p class="text-gray-400 text-lg">Differentiate between genuine knowledge gaps and careless errors.</p>
+            </div>
+            <div class="spiral-card absolute w-[90vw] max-w-lg spotlight-card p-8 md:p-10 rounded-[2rem] border border-white/10 flex flex-col items-center text-center shadow-2xl backdrop-blur-xl">
+                <div class="w-20 h-20 rounded-full bg-violet/10 border border-violet/30 text-violet flex items-center justify-center mb-8 text-4xl shadow-[0_0_40px_rgba(139,92,246,0.4)]"><i class="ph ph-trend-up"></i></div>
+                <h3 class="text-3xl font-bold mb-3">Mock Test Analytics</h3>
+                <p class="text-gray-400 text-lg">Watch your error rate drop over time with detailed visual charts.</p>
+            </div>
+            <div class="spiral-card absolute w-[90vw] max-w-lg spotlight-card p-8 md:p-10 rounded-[2rem] border border-white/10 flex flex-col items-center text-center shadow-2xl backdrop-blur-xl">
+                <div class="w-20 h-20 rounded-full bg-red/10 border border-red/30 text-red flex items-center justify-center mb-8 text-4xl shadow-[0_0_40px_rgba(239,68,68,0.4)]"><i class="ph ph-warning-circle"></i></div>
+                <h3 class="text-3xl font-bold mb-3">Active Revision Mode</h3>
+                <p class="text-gray-400 text-lg">The app feeds you past mistakes to solve again before your next test.</p>
+            </div>
+            <div class="spiral-card absolute w-[90vw] max-w-lg spotlight-card p-8 md:p-10 rounded-[2rem] border border-white/10 flex flex-col items-center text-center shadow-2xl backdrop-blur-xl">
+                <div class="w-20 h-20 rounded-full bg-green-500/10 border border-green-500/30 text-green-500 flex items-center justify-center mb-8 text-4xl shadow-[0_0_40px_rgba(34,197,94,0.4)]"><i class="ph ph-check-square"></i></div>
+                <h3 class="text-3xl font-bold mb-3">Daily Study Planner</h3>
+                <p class="text-gray-400 text-lg">Set daily goals and check off topics synced with weak chapters.</p>
+            </div>
+            <div class="spiral-card absolute w-[90vw] max-w-lg spotlight-card p-8 md:p-10 rounded-[2rem] border border-white/10 flex flex-col items-center text-center shadow-2xl backdrop-blur-xl">
+                <div class="w-20 h-20 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-500 flex items-center justify-center mb-8 text-4xl shadow-[0_0_40px_rgba(249,115,22,0.4)]"><i class="ph ph-target"></i></div>
+                <h3 class="text-3xl font-bold mb-3">Goal Tracking</h3>
+                <p class="text-gray-400 text-lg">Set specific target scores and monitor your proximity to reaching them.</p>
+            </div>
+            <div class="spiral-card absolute w-[90vw] max-w-lg spotlight-card p-8 md:p-10 rounded-[2rem] border border-white/10 flex flex-col items-center text-center shadow-2xl backdrop-blur-xl">
+                <div class="w-20 h-20 rounded-full bg-pink-500/10 border border-pink-500/30 text-pink-500 flex items-center justify-center mb-8 text-4xl shadow-[0_0_40px_rgba(236,72,153,0.4)]"><i class="ph ph-bell-ringing"></i></div>
+                <h3 class="text-3xl font-bold mb-3">Smart Alerts</h3>
+                <p class="text-gray-400 text-lg">Get notified when you repeat the exact same mistake type thrice.</p>
+            </div>
+            <div class="spiral-card absolute w-[90vw] max-w-lg spotlight-card p-8 md:p-10 rounded-[2rem] border border-white/10 flex flex-col items-center text-center shadow-2xl backdrop-blur-xl">
+                <div class="w-20 h-20 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-500 flex items-center justify-center mb-8 text-4xl shadow-[0_0_40px_rgba(59,130,246,0.4)]"><i class="ph ph-folder-open"></i></div>
+                <h3 class="text-3xl font-bold mb-3">Organized Archives</h3>
+                <p class="text-gray-400 text-lg">Never lose a noted mistake again with our robust tagging & search.</p>
+            </div>
+            <div class="spiral-card absolute w-[90vw] max-w-lg spotlight-card p-8 md:p-10 rounded-[2rem] border border-cyan/50 flex flex-col items-center text-center shadow-[0_0_100px_rgba(0,240,255,0.5)] bg-[#0a1a2f]">
+                <div class="w-24 h-24 rounded-full bg-cyan text-background flex items-center justify-center mb-8 text-5xl animate-[bounce_2s_infinite] shadow-[0_0_30px_#00F0FF]"><i class="ph ph-rocket-launch"></i></div>
+                <h3 class="text-4xl font-black mb-3 text-cyan tracking-wide">Rank Boost</h3>
+                <p class="text-gray-300 text-lg font-medium">Watch your percentiles skyrocket as you plug your knowledge leaks.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 5.5: CINEMATIC BLUR TEXT REVEAL -->
+    <section class="h-screen flex items-center justify-center bg-background relative overflow-hidden" id="text-reveal-section">
+        <div class="absolute inset-0 z-0 pointer-events-none flex items-center justify-center opacity-50">
+            <div class="w-[60vw] h-[60vw] bg-violet/10 rounded-full blur-[120px] absolute -translate-x-1/4 -translate-y-1/4 mix-blend-screen"></div>
+            <div class="w-[50vw] h-[50vw] bg-cyan/10 rounded-full blur-[120px] absolute translate-x-1/4 translate-y-1/4 mix-blend-screen"></div>
+        </div>
+
+        <div class="max-w-6xl mx-auto px-6 text-center relative z-10" id="split-text-container">
+            <h2 class="text-5xl md:text-7xl lg:text-[5rem] font-display font-black leading-[1.2] text-white/5">
+                Most students lose marks not because they don't know concepts,
+                <br>
+                <span class="text-cyan/5">but because they repeat the same silly mistakes.</span>
+            </h2>
+        </div>
+    </section>
+
+    <!-- SECTION 6: DASHBOARD DEEP-DIVE (Bento Grid) -->
+    <section id="dashboard" class="py-32 bg-surface border-t border-white/5 relative z-10">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="mb-20 dashboard-header text-center">
+                <h2 class="text-5xl md:text-6xl font-display font-black mb-6">Your new command center.</h2>
+                <p class="text-2xl text-gray-400 font-medium">Designed entirely for JEE aspirants to turn weaknesses into strengths.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 auto-rows-[320px] perspective-1000">
+                <!-- Big Analytics Card -->
+                <div class="bento-item md:col-span-2 spotlight-card rounded-3xl p-10 border border-white/10 hover:border-cyan/50 transition-all duration-500 hover:shadow-[0_0_50px_rgba(0,240,255,0.2)] group cursor-pointer hover:-translate-y-2">
+                    <div class="absolute inset-0 bg-gradient-to-br from-cyan/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <div class="relative z-10 flex flex-col h-full">
+                        <h3 class="text-2xl font-bold mb-2 group-hover:text-cyan transition-colors">Detailed Analytics</h3>
+                        <p class="text-gray-400 text-base mb-8">Subject-wise breakdown of where you lose marks.</p>
+                        <div class="flex-1 w-full bg-[#0B0914] rounded-2xl border border-white/5 flex items-end justify-center gap-6 p-6 shadow-inner">
+                            <div class="w-16 bg-cyan/40 rounded-t-md h-[40%] group-hover:h-[45%] transition-all duration-500 delay-100 group-hover:bg-cyan/60"></div>
+                            <div class="w-16 bg-cyan/60 rounded-t-md h-[70%] group-hover:h-[80%] transition-all duration-500 delay-200 group-hover:bg-cyan/80"></div>
+                            <div class="w-16 bg-cyan rounded-t-md h-[90%] group-hover:h-[100%] transition-all duration-500 shadow-[0_0_20px_rgba(0,240,255,0.4)] group-hover:shadow-[0_0_40px_rgba(0,240,255,0.8)]"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Small Tag Card -->
+                <div class="bento-item spotlight-card rounded-3xl p-10 border border-white/10 hover:border-violet/50 transition-all duration-500 hover:shadow-[0_0_50px_rgba(139,92,246,0.2)] group cursor-pointer hover:-translate-y-2">
+                    <h3 class="text-2xl font-bold mb-2 group-hover:text-violet transition-colors">Smart Tags</h3>
+                    <p class="text-gray-400 text-base mb-8">Categorize by error type.</p>
+                    <div class="flex flex-wrap gap-3">
+                        <span class="px-4 py-2 bg-red/10 border border-red/20 text-red text-sm font-medium rounded-full hover:bg-red hover:text-white transition-colors shadow-sm">Calculation Error</span>
+                        <span class="px-4 py-2 bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 text-sm font-medium rounded-full hover:bg-yellow-500 hover:text-white transition-colors shadow-sm">Forgot Formula</span>
+                        <span class="px-4 py-2 bg-violet/10 border border-violet/20 text-violet text-sm font-medium rounded-full hover:bg-violet hover:text-white transition-colors shadow-sm">Concept Gap</span>
+                        <span class="px-4 py-2 bg-cyan/10 border border-cyan/20 text-cyan text-sm font-bold rounded-full hover:bg-cyan hover:text-background transition-colors shadow-sm hover:shadow-[0_0_15px_rgba(0,240,255,0.5)]">Time Management</span>
+                    </div>
+                </div>
+
+                <!-- Revision Planner -->
+                <div class="bento-item spotlight-card rounded-3xl p-10 border border-white/10 hover:border-white/40 transition-all duration-500 hover:shadow-[0_0_50px_rgba(255,255,255,0.1)] group relative cursor-pointer hover:-translate-y-2">
+                    <h3 class="text-2xl font-bold mb-2 group-hover:text-white transition-colors">Revision Queue</h3>
+                    <p class="text-gray-400 text-base mb-8">Oldest mistakes first.</p>
+                    <div class="space-y-4 relative z-10">
+                        <div class="h-12 w-full bg-[#0B0914] border border-white/5 rounded-xl flex items-center px-5 justify-between hover:bg-white/5 transition-colors shadow-inner">
+                            <span class="text-sm text-gray-300 font-mono font-medium">Mock 1: Vectors</span>
+                            <div class="w-5 h-5 border-2 border-gray-500 rounded flex items-center justify-center group-hover:border-green-400 group-hover:bg-green-400/20 transition-all duration-300">
+                                <i class="ph ph-check text-xs text-green-400 opacity-0 group-hover:opacity-100 transition-opacity delay-100 drop-shadow-[0_0_5px_#22c55e]"></i>
+                            </div>
+                        </div>
+                        <div class="h-12 w-full bg-[#0B0914] border border-white/5 rounded-xl flex items-center px-5 justify-between hover:bg-white/5 transition-colors shadow-inner">
+                            <span class="text-sm text-gray-300 font-mono font-medium">Practice: Kinematics</span>
+                            <div class="w-5 h-5 border-2 border-gray-500 rounded"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Heatmap Snapshot -->
+                <div class="bento-item md:col-span-2 spotlight-card rounded-3xl p-10 border border-white/10 hover:border-red/50 transition-all duration-500 hover:shadow-[0_0_50px_rgba(239,68,68,0.2)] group flex items-center justify-between cursor-pointer hover:-translate-y-2">
+                    <div>
+                        <h3 class="text-2xl font-bold mb-2 group-hover:text-red transition-colors">Chapter Heatmaps</h3>
+                        <p class="text-gray-400 text-base max-w-sm">Visual intensity maps based on error frequency. Spot the bleed instantly.</p>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 w-40 h-40 rotate-[15deg] group-hover:rotate-0 group-hover:scale-110 transition-all duration-500 mr-10">
+                        <div class="bg-red/10 rounded-md"></div><div class="bg-red/40 rounded-md group-hover:shadow-[0_0_20px_rgba(239,68,68,0.8)] group-hover:bg-red/60 transition-colors"></div><div class="bg-red/20 rounded-md"></div>
+                        <div class="bg-red/80 rounded-md group-hover:shadow-[0_0_25px_rgba(239,68,68,1)] group-hover:bg-red transition-colors"></div><div class="bg-red/10 rounded-md"></div><div class="bg-[#0B0914] rounded-md border border-white/5 group-hover:border-red/30 transition-colors"></div>
+                        <div class="bg-[#0B0914] rounded-md border border-white/5 group-hover:border-red/30 transition-colors"></div><div class="bg-red/30 rounded-md"></div><div class="bg-red/50 rounded-md"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 6.5: STACKING ROADMAP CARDS -->
+    <section id="roadmap" class="py-40 bg-background relative z-10 border-t border-white/5">
+        <div class="max-w-4xl mx-auto px-6">
+            <div class="text-center mb-32 roadmap-header">
+                <h2 class="text-5xl md:text-6xl font-display font-black mb-6">The Future of JEE Mirror</h2>
+                <p class="text-2xl text-gray-400 font-medium">We are just getting started. Here is what is dropping next.</p>
+            </div>
+
+            <div class="relative">
+                <div class="stack-card roadmap-anim sticky top-32 spotlight-card p-12 md:p-16 rounded-[2.5rem] border border-violet/30 mb-32 shadow-[0_40px_80px_-20px_rgba(139,92,246,0.3)] bg-[#121021] origin-top hover:border-violet transition-colors duration-500">
+                    <div class="flex flex-col md:flex-row gap-10 items-center">
+                        <div class="w-32 h-32 rounded-full bg-violet/20 flex items-center justify-center text-violet text-5xl shrink-0 shadow-[0_0_30px_rgba(139,92,246,0.5)] border border-violet/30 backdrop-blur-md">
+                            <i class="ph ph-magic-wand"></i>
+                        </div>
+                        <div>
+                            <div class="text-violet font-black tracking-widest text-sm mb-3 uppercase flex items-center gap-3"><div class="w-2.5 h-2.5 rounded-full bg-violet animate-pulse shadow-[0_0_10px_#8b5cf6]"></div> Coming Soon</div>
+                            <h3 class="text-4xl font-display font-black mb-5 text-white drop-shadow-md">AI Study Suggestions</h3>
+                            <p class="text-gray-400 text-xl leading-relaxed">Our AI will analyze your mistake patterns and automatically recommend exactly which concepts you need to restudy, complete with resource links.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stack-card roadmap-anim sticky top-40 spotlight-card p-12 md:p-16 rounded-[2.5rem] border border-cyan/30 mb-32 shadow-[0_40px_80px_-20px_rgba(0,240,255,0.3)] bg-[#121021] origin-top hover:border-cyan transition-colors duration-500">
+                    <div class="flex flex-col md:flex-row gap-10 items-center">
+                        <div class="w-32 h-32 rounded-full bg-cyan/20 flex items-center justify-center text-cyan text-5xl shrink-0 shadow-[0_0_30px_rgba(0,240,255,0.5)] border border-cyan/30 backdrop-blur-md">
+                            <i class="ph ph-timer"></i>
+                        </div>
+                        <div>
+                            <div class="text-cyan font-black tracking-widest text-sm mb-3 uppercase flex items-center gap-3"><div class="w-2.5 h-2.5 rounded-full bg-cyan animate-pulse shadow-[0_0_10px_#00F0FF]"></div> In Development</div>
+                            <h3 class="text-4xl font-display font-black mb-5 text-white drop-shadow-md">Mock Test Mode</h3>
+                            <p class="text-gray-400 text-xl leading-relaxed">Generate a custom, timed mock test using exclusively the questions and concepts you've previously gotten wrong. The ultimate active recall tool.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stack-card roadmap-anim sticky top-48 spotlight-card p-12 md:p-16 rounded-[2.5rem] border border-white/20 mb-32 shadow-[0_40px_80px_-20px_rgba(255,255,255,0.1)] bg-[#121021] origin-top hover:border-white/50 transition-colors duration-500">
+                    <div class="flex flex-col md:flex-row gap-10 items-center">
+                        <div class="w-32 h-32 rounded-full bg-white/10 flex items-center justify-center text-white text-5xl shrink-0 shadow-[0_0_30px_rgba(255,255,255,0.2)] border border-white/20 backdrop-blur-md">
+                            <i class="ph ph-camera"></i>
+                        </div>
+                        <div>
+                            <div class="text-white/50 font-black tracking-widest text-sm mb-3 uppercase flex items-center gap-3"><div class="w-2.5 h-2.5 rounded-full bg-white/50"></div> Planned</div>
+                            <h3 class="text-4xl font-display font-black mb-5 text-white drop-shadow-md">Mistake Photo Uploads</h3>
+                            <p class="text-gray-400 text-xl leading-relaxed">Don't want to type? Just snap a picture of your rough work or the question paper. We will store it securely with your mistake log for instant context.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 7: SOCIAL PROOF -->
+    <section class="py-40 bg-background relative overflow-hidden border-t border-white/5">
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.08)_0%,transparent_60%)] z-0"></div>
+        <div class="max-w-4xl mx-auto px-6 text-center relative z-10">
+            <h2 class="text-4xl md:text-6xl font-display font-black mb-10 social-header">Built for Aspirants, by an Aspirant.</h2>
+            
+            <div class="social-anim spotlight-card p-12 md:p-16 rounded-[3rem] border border-white/10 mt-16 text-left md:flex gap-12 items-center transform hover:scale-[1.02] hover:border-violet/40 transition-all duration-700 hover:shadow-[0_0_80px_rgba(139,92,246,0.15)]">
+                <div class="w-40 h-40 rounded-full bg-gradient-to-br from-violet to-cyan flex-shrink-0 mx-auto md:mx-0 mb-8 md:mb-0 flex items-center justify-center overflow-hidden shadow-[0_0_40px_rgba(0,240,255,0.4)] border-4 border-background relative group">
+                    <i class="ph ph-user text-[5rem] text-background transform group-hover:scale-110 transition-transform duration-500"></i>
+                    <div class="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 mix-blend-overlay"></div>
+                </div>
+                <div>
+                    <i class="ph ph-quotes text-5xl text-violet opacity-60 mb-6 block drop-shadow-[0_0_15px_rgba(139,92,246,0.8)]"></i>
+                    <p class="text-xl md:text-2xl text-gray-300 mb-8 leading-relaxed font-medium">
+                        JEEMirror isn't a massive corporate tool. It was built out of pure necessity to solve the exact problem you are facing right now: repeating silly mistakes and hitting a score plateau. I built it in 2 days to fix my own prep. Now, it's here to fix yours.
+                    </p>
+                    <div>
+                        <div class="font-black text-white font-display text-2xl tracking-wide">Avadhoot Kekan</div>
+                        <div class="text-cyan text-sm font-bold tracking-[0.2em] uppercase mt-2 drop-shadow-[0_0_8px_rgba(0,240,255,0.5)]">17-year-old Builder & JEE Aspirant</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 8: PRICING -->
+    <section id="pricing" class="py-40 bg-surface2 relative border-t border-white/5 overflow-hidden">
+        <div class="absolute inset-0 bg-grid opacity-15 pointer-events-none"></div>
+        <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-80 bg-cyan/10 blur-[180px] pointer-events-none"></div>
+        
+        <div class="max-w-7xl mx-auto px-6 relative z-10">
+            <div class="text-center mb-24 pricing-header">
+                <h2 class="text-5xl md:text-7xl font-display font-black mb-6 drop-shadow-lg">Less than the cost of a rough notebook.</h2>
+                <p class="text-2xl text-gray-400 font-medium">Zero recurring server costs means pure value for you.</p>
+                
+                <div class="inline-flex bg-[#0B0914] border border-white/10 rounded-full p-1.5 mt-12 shadow-[inset_0_2px_15px_rgba(0,0,0,0.8)] magnetic hover-trigger">
+                    <button id="btn-monthly" class="px-8 py-3 rounded-full text-base font-bold text-gray-400 hover:text-white transition-all">Monthly</button>
+                    <button id="btn-yearly" class="px-8 py-3 rounded-full text-base font-bold bg-white/10 text-white transition-all shadow-[0_0_20px_rgba(255,255,255,0.15)] border border-white/10">Yearly <span class="text-green-400 text-xs ml-2 uppercase tracking-widest drop-shadow-[0_0_5px_#22c55e]">-41%</span></button>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-10 max-w-5xl mx-auto perspective-1000">
+                <!-- Monthly Card -->
+                <div id="monthly-card" class="pricing-card spotlight-card rounded-[2.5rem] p-12 border border-white/10 flex flex-col relative overflow-hidden hover:-translate-y-4 transition-all duration-500 hover:shadow-[0_30px_60px_rgba(0,0,0,0.6)] bg-[#121021]">
+                    <h3 class="text-3xl font-black mb-3 transition-colors duration-300">Monthly Prep</h3>
+                    <p class="text-gray-400 text-lg mb-8">Perfect to test the waters before exams.</p>
+                    <div class="text-6xl font-display font-black mb-10">₹50<span class="text-xl text-gray-500 font-sans font-medium">/mo</span></div>
+                    
+                    <ul class="space-y-5 mb-12 flex-1 relative z-10">
+                        <li class="flex items-center gap-4 text-gray-300 font-medium text-lg"><i class="ph ph-check-circle text-cyan text-2xl drop-shadow-[0_0_8px_rgba(0,240,255,0.5)]"></i> Unlimited Mistake Logging</li>
+                        <li class="flex items-center gap-4 text-gray-300 font-medium text-lg"><i class="ph ph-check-circle text-cyan text-2xl drop-shadow-[0_0_8px_rgba(0,240,255,0.5)]"></i> Full Dashboard Analytics</li>
+                        <li class="flex items-center gap-4 text-gray-300 font-medium text-lg"><i class="ph ph-check-circle text-cyan text-2xl drop-shadow-[0_0_8px_rgba(0,240,255,0.5)]"></i> Active Revision Mode</li>
+                        <li class="flex items-center gap-4 text-gray-300 font-medium text-lg"><i class="ph ph-check-circle text-cyan text-2xl drop-shadow-[0_0_8px_rgba(0,240,255,0.5)]"></i> Chapter Heatmaps</li>
+                    </ul>
+                    
+                    <button class="magnetic hover-trigger relative z-10 w-full py-5 rounded-2xl border-2 border-cyan text-cyan font-black text-lg hover:bg-cyan hover:text-background hover:shadow-[0_0_30px_rgba(0,240,255,0.6)] transition-all">Select Monthly</button>
+                </div>
+
+                <!-- Yearly Card (Default Active) -->
+                <div id="yearly-card" class="pricing-card spotlight-card rounded-[2.5rem] p-12 border-2 border-cyan relative flex flex-col shadow-[0_0_60px_rgba(0,240,255,0.15)] hover:-translate-y-4 hover:shadow-[0_30px_80px_rgba(0,240,255,0.3)] transition-all duration-500 overflow-hidden bg-[#121021]">
+                    <div class="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-cyan to-violet animate-[pulse_2s_infinite]"></div>
+                    <div class="absolute -right-20 -top-20 w-64 h-64 bg-cyan/20 rounded-full blur-[60px] pointer-events-none"></div>
+                    <div class="absolute top-8 right-8 bg-cyan/20 text-cyan text-sm font-black tracking-wider uppercase px-4 py-1.5 rounded-full border border-cyan/50 shadow-[0_0_15px_rgba(0,240,255,0.6)]">Most Popular</div>
+                    
+                    <h3 class="text-3xl font-black mb-3 text-cyan transition-colors duration-300 drop-shadow-[0_0_10px_rgba(0,240,255,0.5)]">Yearly Mastery</h3>
+                    <p class="text-gray-400 text-lg mb-8">Commit to the process and save huge.</p>
+                    <div class="text-6xl font-display font-black mb-10 text-transparent bg-clip-text bg-gradient-to-r from-cyan to-white drop-shadow-md">₹350<span class="text-xl text-gray-500 font-sans font-medium">/yr</span></div>
+                    
+                    <ul class="space-y-5 mb-12 flex-1 relative z-10">
+                        <li class="flex items-center gap-4 text-white font-bold text-lg"><i class="ph ph-check-circle text-cyan text-2xl drop-shadow-[0_0_10px_rgba(0,240,255,0.8)]"></i> Everything in Monthly</li>
+                        <li class="flex items-center gap-4 text-white font-bold text-lg"><i class="ph ph-check-circle text-cyan text-2xl drop-shadow-[0_0_10px_rgba(0,240,255,0.8)]"></i> Priority Feature Access</li>
+                        <li class="flex items-center gap-4 text-white font-bold text-lg"><i class="ph ph-check-circle text-cyan text-2xl drop-shadow-[0_0_10px_rgba(0,240,255,0.8)]"></i> Keep data till JEE Adv</li>
+                        <li class="flex items-center gap-4 text-white font-bold text-lg"><i class="ph ph-check-circle text-cyan text-2xl drop-shadow-[0_0_10px_rgba(0,240,255,0.8)]"></i> Manual Admin Support</li>
+                    </ul>
+                    
+                    <button class="magnetic hover-trigger relative z-10 w-full py-5 rounded-2xl bg-cyan text-background font-black text-lg shadow-[0_0_30px_rgba(0,240,255,0.6)] hover:shadow-[0_0_50px_rgba(0,240,255,1)] hover:bg-white transition-all duration-300 transform hover:scale-[1.02]">Get Yearly Access</button>
+                </div>
+            </div>
+            
+            <p class="text-center text-gray-500 text-base font-medium mt-12 opacity-80"><i class="ph ph-lock-key mr-2"></i> Payment via UPI. Instant manual activation by admin within 2 hours.</p>
+        </div>
+    </section>
+
+    <!-- SECTION 9: FAQ + FINAL CTA -->
+    <section class="py-40 bg-background relative overflow-hidden">
+        <div class="max-w-4xl mx-auto px-6">
+            <h2 class="text-5xl font-display font-black mb-16 text-center faq-header drop-shadow-lg">Frequently Asked Questions</h2>
+            
+            <div class="space-y-6 mb-40">
+                <div class="faq-item spotlight-card border border-white/10 rounded-2xl overflow-hidden cursor-pointer hover:border-cyan/40 transition-colors duration-300 shadow-lg">
+                    <div class="p-8 flex justify-between items-center bg-white/5 hover:bg-white/10 transition-colors">
+                        <h4 class="font-bold text-xl">How do I make the payment?</h4>
+                        <i class="ph ph-caret-down text-2xl transition-transform duration-300 text-cyan drop-shadow-[0_0_5px_#00f0ff]"></i>
+                    </div>
+                    <div class="max-h-0 overflow-hidden transition-all duration-500 faq-content">
+                        <p class="p-8 text-gray-300 text-lg border-t border-white/10 leading-relaxed bg-[#0B0914]/80">
+                            Payments are processed manually via UPI to keep costs absolutely zero for hosting. You simply scan the QR code (UPI ID: 9370939333@ybl), pay Rs. 50 or 350, and submit your UTR number. Your account is activated within 2 hours.
+                        </p>
+                    </div>
+                </div>
+                <div class="faq-item spotlight-card border border-white/10 rounded-2xl overflow-hidden cursor-pointer hover:border-cyan/40 transition-colors duration-300 shadow-lg">
+                    <div class="p-8 flex justify-between items-center bg-white/5 hover:bg-white/10 transition-colors">
+                        <h4 class="font-bold text-xl">Is my test data and personal info safe?</h4>
+                        <i class="ph ph-caret-down text-2xl transition-transform duration-300 text-cyan drop-shadow-[0_0_5px_#00f0ff]"></i>
+                    </div>
+                    <div class="max-h-0 overflow-hidden transition-all duration-500 faq-content">
+                        <p class="p-8 text-gray-300 text-lg border-t border-white/10 leading-relaxed bg-[#0B0914]/80">
+                            Yes. The app is built on a production-grade PostgreSQL database via Supabase. We utilize strict Row Level Security (RLS) policies, meaning it is cryptographically impossible for anyone (even us) to access your mistake data except your logged-in account.
+                        </p>
+                    </div>
+                </div>
+                <div class="faq-item spotlight-card border border-white/10 rounded-2xl overflow-hidden cursor-pointer hover:border-cyan/40 transition-colors duration-300 shadow-lg">
+                    <div class="p-8 flex justify-between items-center bg-white/5 hover:bg-white/10 transition-colors">
+                        <h4 class="font-bold text-xl">Can I use this for NEET or other exams?</h4>
+                        <i class="ph ph-caret-down text-2xl transition-transform duration-300 text-cyan drop-shadow-[0_0_5px_#00f0ff]"></i>
+                    </div>
+                    <div class="max-h-0 overflow-hidden transition-all duration-500 faq-content">
+                        <p class="p-8 text-gray-300 text-lg border-t border-white/10 leading-relaxed bg-[#0B0914]/80">
+                            While the current subjects (Physics, Chemistry, Maths) are hardcoded for JEE, the core concept of tracking mistakes applies to any exam. A customizable subjects feature is planned for the future!
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Massive Cinematic CTA -->
+            <div class="cta-anim spotlight-card rounded-[3rem] p-16 md:p-24 text-center border-2 border-cyan/40 relative overflow-hidden shadow-[0_0_150px_rgba(0,240,255,0.2)] hover:shadow-[0_0_200px_rgba(0,240,255,0.3)] transition-shadow duration-700 bg-[#0B0914]">
+                <div class="absolute inset-0 bg-gradient-to-t from-cyan/20 to-transparent opacity-60 pointer-events-none mix-blend-screen"></div>
+                <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-transparent via-cyan to-transparent animate-[pulse_2s_infinite] pointer-events-none"></div>
+                
+                <div class="relative z-10">
+                    <h2 class="text-5xl md:text-7xl font-display font-black mb-8 drop-shadow-[0_0_20px_rgba(255,255,255,0.4)] tracking-tight">Ready to break the cycle?</h2>
+                    <p class="text-2xl text-cyan/90 mb-12 max-w-2xl mx-auto font-medium leading-relaxed drop-shadow-md">Stop repeating the same silly mistakes today. Start logging, start analyzing, start improving.</p>
+                    <a href="#pricing" class="magnetic hover-trigger inline-block px-12 py-6 rounded-[2rem] bg-cyan text-background font-black text-2xl hover:scale-105 hover:shadow-[0_0_60px_rgba(0,240,255,0.9)] hover:bg-white transition-all duration-300 transform">
+                        See Pricing & Start Tracking
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-16 border-t border-white/10 bg-background text-center text-gray-500 relative z-10">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
+            <div class="flex items-center gap-3 magnetic hover-trigger">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan to-violet flex items-center justify-center font-display font-black text-background text-base shadow-[0_0_15px_rgba(139,92,246,0.6)]">M</div>
+                <span class="font-display font-black text-white tracking-tight text-xl">JEE Mirror</span>
+            </div>
+            <p class="font-medium tracking-wide text-base">&copy; 2026 JEE Mirror. Built by Avadhoot Kekan.</p>
+            <div class="flex gap-8 font-bold uppercase tracking-[0.2em] text-sm">
+                <a href="#" class="hover:text-cyan hover:drop-shadow-[0_0_10px_rgba(0,240,255,0.8)] transition-all">Twitter</a>
+                <a href="#" class="hover:text-cyan hover:drop-shadow-[0_0_10px_rgba(0,240,255,0.8)] transition-all">GitHub</a>
+                <a href="#" class="hover:text-cyan hover:drop-shadow-[0_0_10px_rgba(0,240,255,0.8)] transition-all">Email</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- GSAP & Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script>
+        // System Config
+        gsap.registerPlugin(ScrollTrigger);
+        gsap.config({ force3D: true });
+
+        // --- PRELOADER LOGIC ---
+        const preloader = document.getElementById('preloader');
+        const loadBar = document.getElementById('loading-bar');
+        const loadPercent = document.getElementById('loading-percentage');
+        const loadText = document.querySelector('.loading-text');
+        
+        let progress = 0;
+        const loadInterval = setInterval(() => {
+            progress += Math.floor(Math.random() * 10) + 1;
+            if (progress >= 100) progress = 100;
+            
+            loadBar.style.width = `${progress}%`;
+            loadPercent.innerText = `${progress}%`;
+            
+            // Text glitch effect
+            if(progress % 15 === 0) loadText.style.transform = `skewX(${Math.random() * 10 - 5}deg)`;
+            else loadText.style.transform = `skewX(0deg)`;
+
+            if (progress === 100) {
+                clearInterval(loadInterval);
+                setTimeout(bootSequence, 500);
+            }
+        }, 50);
+
+        function bootSequence() {
+            const tl = gsap.timeline({ onComplete: () => {
+                preloader.style.display = 'none';
+                ScrollTrigger.refresh();
+                initHeroAnimations();
+            }});
+            
+            tl.to(loadText, { opacity: 0, scale: 1.1, duration: 0.3, ease: "power2.inOut" })
+              .to(loadBar.parentElement, { opacity: 0, duration: 0.2 }, "<")
+              .to(loadPercent, { opacity: 0, duration: 0.2 }, "<")
+              .to(preloader, { yPercent: -100, duration: 0.8, ease: "expo.inOut" }, "+=0.1")
+              .to("#main-nav", { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }, "-=0.3");
+        }
+
+        // --- PARTICLE NETWORK CANVAS ---
+        const canvas = document.getElementById('hero-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.radius = Math.random() * 2 + 1;
+            }
+            update() {
+                this.x += this.vx; this.y += this.vy;
+                if (this.x < 0 || this.x > canvas.width) this.vx = -this.vx;
+                if (this.y < 0 || this.y > canvas.height) this.vy = -this.vy;
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(0, 240, 255, 0.5)';
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < 80; i++) particles.push(new Particle());
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+                for (let j = i; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 120) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = `rgba(139, 92, 246, ${1 - distance/120})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        // --- SPOTLIGHT HOVER CARDS ---
+        document.querySelectorAll('.spotlight-card').forEach(card => {
+            card.addEventListener('mousemove', e => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                card.style.setProperty('--mouse-x', `${x}px`);
+                card.style.setProperty('--mouse-y', `${y}px`);
+            });
+        });
+
+        // --- CUSTOM CURSOR & MAGNETIC PHYSICS ---
+        const cursorDot = document.getElementById('cursor-dot');
+        const cursorRing = document.getElementById('cursor-ring');
+        let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
+        let ringX = mouseX, ringY = mouseY;
+        
+        if (window.matchMedia("(pointer: coarse)").matches) {
+            cursorDot.style.display = "none"; cursorRing.style.display = "none";
+        } else {
+            document.addEventListener('mousemove', (e) => {
+                mouseX = e.clientX; mouseY = e.clientY;
+                cursorDot.style.left = `${mouseX}px`; cursorDot.style.top = `${mouseY}px`;
+                // Interactive particle dodge
+                particles.forEach(p => {
+                    const dx = p.x - mouseX; const dy = p.y - mouseY;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if(dist < 100) { p.x += dx * 0.05; p.y += dy * 0.05; }
+                });
+            });
+            
+            gsap.ticker.add(() => {
+                ringX += (mouseX - ringX) * 0.15; ringY += (mouseY - ringY) * 0.15;
+                cursorRing.style.left = `${ringX}px`; cursorRing.style.top = `${ringY}px`;
+            });
+
+            document.querySelectorAll('.hover-trigger, button, a').forEach(el => {
+                el.addEventListener('mouseenter', () => {
+                    cursorRing.style.width = '70px'; cursorRing.style.height = '70px';
+                    cursorRing.style.borderColor = '#00F0FF'; cursorRing.style.backgroundColor = 'rgba(0, 240, 255, 0.05)';
+                    cursorDot.style.transform = 'translate(-50%, -50%) scale(0.5)';
+                });
+                el.addEventListener('mouseleave', () => {
+                    cursorRing.style.width = '40px'; cursorRing.style.height = '40px';
+                    cursorRing.style.borderColor = 'rgba(139, 92, 246, 0.5)'; cursorRing.style.backgroundColor = 'transparent';
+                    cursorDot.style.transform = 'translate(-50%, -50%) scale(1)';
+                });
+            });
+
+            document.querySelectorAll('.magnetic').forEach(elem => {
+                elem.addEventListener('mousemove', function(e) {
+                    const rect = this.getBoundingClientRect();
+                    const x = (e.clientX - rect.left - rect.width / 2) * 0.4;
+                    const y = (e.clientY - rect.top - rect.height / 2) * 0.4;
+                    gsap.to(this, { x: x, y: y, duration: 0.3, ease: "power2.out", scale: 1.05 });
+                });
+                elem.addEventListener('mouseleave', function() {
+                    gsap.to(this, { x: 0, y: 0, duration: 0.7, ease: "elastic.out(1, 0.3)", scale: 1 });
+                });
+            });
+        }
+
+        // --- HERO INIT ---
+        function initHeroAnimations() {
+            gsap.to("#hero-mockup", { opacity: 1, duration: 2, ease: "power3.out" });
+            gsap.to("#hero-content", { opacity: 1, duration: 1.5, delay: 0.5, ease: "power3.out" });
+            
+            if (!window.matchMedia("(pointer: coarse)").matches) {
+                document.addEventListener('mousemove', (e) => {
+                    const xAxis = (window.innerWidth / 2 - e.pageX) / 40;
+                    const yAxis = (window.innerHeight / 2 - e.pageY) / 40;
+                    gsap.to('#hero-mockup-wrapper', { rotationY: xAxis, rotationX: yAxis, duration: 1, ease: "power2.out" });
+                });
+            }
+        }
+
+        // --- SCROLL ANIMATIONS ---
+        
+        // 1. Hero Zoom
+        gsap.to("#hero-mockup", {
+            scale: 1, filter: "blur(0px)", ease: "none",
+            scrollTrigger: { trigger: "#hero", start: "top top", end: "bottom top", scrub: 1 }
+        });
+        gsap.to("#hero-content", {
+            y: -150, opacity: 0, scale: 0.9, filter: "blur(10px)", ease: "none",
+            scrollTrigger: { trigger: "#hero", start: "top top", end: "+=50%", scrub: 1 }
+        });
+
+        // 2. Parallax
+        gsap.utils.toArray('.parallax-element').forEach(layer => {
+            gsap.to(layer, {
+                y: -300, rotation: 25, opacity: 0, ease: "none",
+                scrollTrigger: { trigger: "#problem-section", start: "top bottom", end: "bottom top", scrub: 0.5 }
+            });
+        });
+
+        // 3. Scroll Media (Features)
+        const featureTexts = gsap.utils.toArray('.feature-text');
+        const featureMedias = gsap.utils.toArray('.feature-media');
+        ScrollTrigger.create({
+            trigger: "#features-wrapper", start: "top top", end: "bottom bottom",
+            onUpdate: (self) => {
+                const p = self.progress;
+                let activeIndex = p > 0.33 && p < 0.66 ? 1 : p >= 0.66 ? 2 : 0;
+                featureTexts.forEach((text, i) => {
+                    text.style.opacity = i === activeIndex ? "1" : "0.2";
+                    text.style.transform = i === activeIndex ? "scale(1.05) translateX(10px)" : "scale(1) translateX(0)";
+                });
+                featureMedias.forEach((media, i) => {
+                    if (i === activeIndex) {
+                        media.style.opacity = "1"; media.style.transform = "translateY(0) scale(1)";
+                    } else {
+                        media.style.opacity = "0"; media.style.transform = i < activeIndex ? "translateY(-40px) scale(0.95)" : "translateY(40px) scale(0.95)";
+                    }
+                });
+            }
+        });
+
+        // 4. Mascot Journey (Perfect Pinning)
+        gsap.to("#journey-track", {
+            xPercent: -75, ease: "none",
+            scrollTrigger: {
+                trigger: "#journey-section", start: "top top", end: "+=300%", pin: true, scrub: 1,
+                onUpdate: (self) => {
+                    const tooltip = document.getElementById("mascot-tooltip");
+                    const p = self.progress;
+                    tooltip.style.opacity = p > 0.05 && p < 0.95 ? "1" : "0";
+                    if (p < 0.25) tooltip.innerHTML = "Taking mock test...<div class='absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-r-[8px] border-t-[10px] border-l-transparent border-r-transparent border-t-violet'></div>";
+                    else if (p < 0.55) tooltip.innerHTML = "Logging silly mistakes!<div class='absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-r-[8px] border-t-[10px] border-l-transparent border-r-transparent border-t-violet'></div>";
+                    else if (p < 0.85) tooltip.innerHTML = "Finding patterns...<div class='absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-r-[8px] border-t-[10px] border-l-transparent border-r-transparent border-t-violet'></div>";
+                    else tooltip.innerHTML = "Ready for JEE!<div class='absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-r-[8px] border-t-[10px] border-l-transparent border-r-transparent border-t-violet'></div>";
+                }
+            }
+        });
+        gsap.to("#mascot", { y: 20, rotation: 5, repeat: -1, yoyo: true, duration: 1.5, ease: "sine.inOut" });
+
+        // 5. 3D Spiral Tunnel
+        const spiralCards = gsap.utils.toArray('.spiral-card');
+        const spiralWorld = document.getElementById('spiral-world');
+        const tlSpiral = gsap.timeline({ scrollTrigger: { trigger: "#spiral-section", start: "top top", end: "+=400%", pin: true, scrub: 1 } });
+        
+        tlSpiral.to(spiralWorld, { rotation: 180, ease: "none", duration: 3 }, 0);
+        spiralCards.forEach((card, i) => {
+            const angle = (i / spiralCards.length) * Math.PI * 4; 
+            const radius = window.innerWidth < 768 ? 180 : 450;
+            const targetX = Math.cos(angle) * radius, targetY = Math.sin(angle) * radius;
+            gsap.set(card, { xPercent: -50, yPercent: -50, x: targetX * 0.05, y: targetY * 0.05, scale: 0.05, opacity: 0, filter: "blur(20px)", rotation: angle * (180/Math.PI) * 0.5 });
+            const staggerStart = (i / spiralCards.length) * 1.8; 
+            tlSpiral.to(card, { x: targetX, y: targetY, scale: 1, opacity: 1, filter: "blur(0px)", ease: "power2.out", duration: 0.5 }, staggerStart);
+            tlSpiral.to(card, { x: targetX * 1.5, y: targetY * 1.5, scale: 1.5, opacity: 0, filter: "blur(30px)", ease: "power2.in", duration: 0.3 }, staggerStart + 0.8);
+        });
+        tlSpiral.set({}, {}, 3.2);
+
+        // 6. Cinematic Blur Text Reveal
+        // Split text logic to wrap characters (simulating SplitText)
+        const textContainer = document.getElementById('split-text-container').querySelector('h2');
+        const htmlContent = textContainer.innerHTML;
+        // Basic split, ignoring the <br> and span structure for a moment to rebuild it properly
+        const nodes = Array.from(textContainer.childNodes);
+        textContainer.innerHTML = '';
+        
+        nodes.forEach(node => {
+            if(node.nodeType === 3) { // Text node
+                const text = node.textContent;
+                const words = text.split(' ');
+                words.forEach((word, wIdx) => {
+                    if(word.trim() === '') { textContainer.appendChild(document.createTextNode(' ')); return; }
+                    const wordSpan = document.createElement('span'); wordSpan.className = 'word-wrap';
+                    word.split('').forEach(char => {
+                        const charSpan = document.createElement('span');
+                        charSpan.className = 'char-wrap'; charSpan.textContent = char;
+                        wordSpan.appendChild(charSpan);
+                    });
+                    textContainer.appendChild(wordSpan);
+                    if(wIdx < words.length - 1) textContainer.appendChild(document.createTextNode(' '));
+                });
+            } else if (node.nodeName === 'BR') {
+                textContainer.appendChild(document.createElement('br'));
+            } else if (node.nodeName === 'SPAN') {
+                const styledSpan = document.createElement('span'); styledSpan.className = node.className;
+                const words = node.textContent.split(' ');
+                words.forEach((word, wIdx) => {
+                    if(word.trim() === '') { styledSpan.appendChild(document.createTextNode(' ')); return; }
+                    const wordSpan = document.createElement('span'); wordSpan.className = 'word-wrap';
+                    word.split('').forEach(char => {
+                        const charSpan = document.createElement('span');
+                        charSpan.className = 'char-wrap'; charSpan.textContent = char;
+                        wordSpan.appendChild(charSpan);
+                    });
+                    styledSpan.appendChild(wordSpan);
+                    if(wIdx < words.length - 1) styledSpan.appendChild(document.createTextNode(' '));
+                });
+                textContainer.appendChild(styledSpan);
+            }
+        });
+
+        // Animate the characters
+        gsap.set('.char-wrap', { opacity: 0, filter: 'blur(10px)', y: 20, scale: 1.5 });
+        gsap.to('.char-wrap', {
+            opacity: 1, filter: 'blur(0px)', y: 0, scale: 1, stagger: 0.01, ease: "power3.out",
+            scrollTrigger: { trigger: "#text-reveal-section", start: "top 60%", end: "center center", scrub: 1 }
+        });
+
+        // 7. Entrances
+        gsap.fromTo(".bento-item", 
+            { y: 150, autoAlpha: 0, rotationX: -20, scale: 0.8 },
+            { y: 0, autoAlpha: 1, rotationX: 0, scale: 1, stagger: 0.15, duration: 1.2, ease: "expo.out", scrollTrigger: { trigger: "#dashboard", start: "top 70%" } }
+        );
+
+        gsap.utils.toArray('.roadmap-anim').forEach((card, i) => {
+            gsap.fromTo(card, { y: 100, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1, ease: "power3.out", scrollTrigger: { trigger: card, start: "top 85%" } });
+            if (i !== 2) gsap.to(card, { scale: 0.9, opacity: 0.2, filter: "blur(10px)", scrollTrigger: { trigger: card, start: "top 120px", end: "bottom top", scrub: true } });
+        });
+
+        gsap.fromTo(".social-anim", { x: -100, autoAlpha: 0, filter: "blur(10px)" }, { x: 0, autoAlpha: 1, filter: "blur(0px)", duration: 1.5, ease: "power4.out", scrollTrigger: { trigger: ".social-header", start: "top 75%" } });
+
+        gsap.fromTo(".pricing-card", 
+            { y: 100, scale: 0.8, autoAlpha: 0 },
+            { y: 0, scale: 1, autoAlpha: 1, stagger: 0.2, duration: 1.5, ease: "elastic.out(1, 0.6)", scrollTrigger: { trigger: ".pricing-header", start: "top 70%" } }
+        );
+
+        gsap.fromTo(".faq-item", { y: 50, autoAlpha: 0 }, { y: 0, autoAlpha: 1, stagger: 0.15, duration: 1, ease: "power3.out", scrollTrigger: { trigger: ".faq-header", start: "top 70%" } });
+        
+        gsap.fromTo(".cta-anim", { scale: 0.8, autoAlpha: 0, y: 100, rotationX: 10 }, { scale: 1, autoAlpha: 1, y: 0, rotationX: 0, duration: 1.5, ease: "expo.out", scrollTrigger: { trigger: ".cta-anim", start: "top 80%" } });
+
+        gsap.to("#scroll-progress", { scaleX: 1, ease: "none", scrollTrigger: { trigger: document.documentElement, start: "top top", end: "bottom bottom", scrub: 0.1 } });
+
+        // Pricing Toggle
+        const btnMonthly = document.getElementById('btn-monthly'), btnYearly = document.getElementById('btn-yearly');
+        const monthlyCard = document.getElementById('monthly-card'), yearlyCard = document.getElementById('yearly-card');
+        
+        btnMonthly.addEventListener('click', () => {
+            btnMonthly.className = "px-8 py-3 rounded-full text-base font-bold bg-white/10 text-white transition-all shadow-[0_0_20px_rgba(255,255,255,0.15)] border border-white/10";
+            btnYearly.className = "px-8 py-3 rounded-full text-base font-bold text-gray-400 hover:text-white transition-all";
+            monthlyCard.classList.replace('border-white/10', 'border-cyan'); monthlyCard.classList.add('border-2'); monthlyCard.querySelector('h3').classList.add('text-cyan');
+            yearlyCard.classList.replace('border-cyan', 'border-white/10'); yearlyCard.classList.remove('border-2'); yearlyCard.querySelector('h3').classList.remove('text-cyan');
+        });
+        btnYearly.addEventListener('click', () => {
+            btnYearly.className = "px-8 py-3 rounded-full text-base font-bold bg-white/10 text-white transition-all shadow-[0_0_20px_rgba(255,255,255,0.15)] border border-white/10";
+            btnMonthly.className = "px-8 py-3 rounded-full text-base font-bold text-gray-400 hover:text-white transition-all";
+            yearlyCard.classList.replace('border-white/10', 'border-cyan'); yearlyCard.classList.add('border-2'); yearlyCard.querySelector('h3').classList.add('text-cyan');
+            monthlyCard.classList.replace('border-cyan', 'border-white/10'); monthlyCard.classList.remove('border-2'); monthlyCard.querySelector('h3').classList.remove('text-cyan');
+        });
+
+        // FAQ Toggle
+        document.querySelectorAll('.faq-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const content = item.querySelector('.faq-content'), icon = item.querySelector('i');
+                const isOpen = content.style.maxHeight;
+                document.querySelectorAll('.faq-item').forEach(other => {
+                    other.querySelector('.faq-content').style.maxHeight = null;
+                    other.querySelector('i').style.transform = "rotate(0deg)";
+                });
+                if (!isOpen) { content.style.maxHeight = content.scrollHeight + "px"; icon.style.transform = "rotate(180deg)"; }
+            });
+        });
+    </script>
+</body>
+</html>
